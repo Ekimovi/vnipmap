@@ -43,6 +43,9 @@ defineExpose({ a, b })
   flex-direction: column;
   border-radius: 0.5em;
   overflow: hidden;
+  font-size: 0.9em;
+  min-width: 32em;
+  margin-right: 0.2em;
   /* overflow: hidden; */
 }
 .w-header {

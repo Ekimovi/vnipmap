@@ -1,41 +1,38 @@
 <script setup>
-import { ref, reactive, watch } from 'vue'
-import { getNodes } from '../stores/nodes'
+import { ref, reactive, watch, onUnmounted, computed } from 'vue'
+import { nodes, getNodes, activeNodeId } from '../stores/nodes'
+import { show } from '../stores/show'
 import { debounce } from 'quasar'
 import translit from '../utils/translit'
 import ENode from './e-node.vue'
 import ENodeList from './e-node-list.vue'
-import { useRouter } from 'vue-router'
+
+onUnmounted(() => {})
 
 const history = ref(JSON.parse(localStorage.getItem('history')) || [])
-const router = useRouter()
-
-function pushAciveNodeId(activeNodeId) {
-  router.push({
-    path: '/',
-    query: {
-      activeNodeId,
-    },
-  })
-}
-const addNodeToHistory = node => {
-  history.value = [node, ...history.value.filter(n => n.s_id != node.s_id)]
+const addNodeToHistory = (node) => {
+  history.value = [node, ...history.value.filter((n) => n.s_id != node.s_id)]
   localStorage.setItem('history', JSON.stringify(history.value.slice(0, 15)))
 }
-const clickNode = node => {
+const clickNode = (node) => {
   addNodeToHistory(node)
-  pushAciveNodeId(node.s_id)
+  activeNodeId.value = node.s_id
+  show.mainMenu = false
 }
 
 const searchField = ref('')
-const nodes = reactive({
-  val: []
-})
+const searchResult = computed(() => Object.values(nodes.inUse.search))
+watch(
+  () => nodes.inUse.search,
+  (val) => {
+    console.log('asdfasdf')
+  }
+)
 
-const gNodes = async text => {
+const gNodes = async (text) => {
   /* this.loading = true */
   /* this.items = [] */
-  const getProp = v => {
+  const getProp = (v) => {
     const regIp = /\d+\.\d+/
     const regNioss = /\d{5}/
     if (regIp.test(v)) return { s__ip: v }
@@ -45,7 +42,7 @@ const gNodes = async text => {
 
   const prop = getProp(text)
 
-  nodes.val = await getNodes(prop)
+  getNodes(prop, 'search')
 
   /* this.items = data */
   /* this.showMenu = false */
@@ -57,15 +54,11 @@ const gNodes = async text => {
 }
 
 watch(searchField, (val, oldVal) => {
-  val &&
-    val != oldVal &&
-    val.length > 4 &&
-    dGetNodes(val)
-  !val && (nodes.val = [])
+  val && val != oldVal && val.length > 4 && dGetNodes(val)
+  !val && (searchResult.value = [])
 })
 
 const dGetNodes = debounce(gNodes, 500)
-
 </script>
 
 <template>
@@ -97,8 +90,8 @@ const dGetNodes = debounce(gNodes, 500)
         <q-icon name="search" />
       </template>
     </q-input>
-    <div v-if="nodes.val.length > 0" class="result">
-      <e-node-list :nodes="nodes.val" @click-node="clickNode" />
+    <div v-if="searchResult.length > 0" class="result">
+      <e-node-list :nodes="searchResult" @click-node="clickNode" />
     </div>
   </div>
 </template>
@@ -115,14 +108,14 @@ const dGetNodes = debounce(gNodes, 500)
   /* overflow: hidden; */
 }
 .search {
-  width: 35em;
+  width: 32em;
   /* padding: 10px; */
   max-height: calc(100vh - 3em);
 }
 .m-title {
   display: flex;
   align-items: center;
-  height: 2.9em;
+  height: 2em;
   border-radius: 2em;
   font-size: 1.2em;
   font-weight: bold;

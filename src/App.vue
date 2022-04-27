@@ -2,12 +2,15 @@
 import { reactive, onMounted, watch } from 'vue'
 import { show } from './stores/show'
 import { useRoute } from 'vue-router'
-import { activeNodeId } from './stores/nodes'
+import { activeNodeId, graph } from './stores/nodes'
 import EMainMenu from './components/e-main-menu.vue'
 import ETree from './components/e-tree.vue'
+import EGraph from './components/e-graph.vue'
 
 const keyDown = (e) => {
-  if (e.ctrlKey && e.key == ' ') show.mainMenu = !show.mainMenu
+  if (e.ctrlKey && e.key == 'm') {
+    show.mainMenu = !show.mainMenu
+  }
 }
 
 onMounted(() => {
@@ -18,7 +21,7 @@ const route = useRoute()
 
 watch(
   () => route.query.activeNodeId,
-  id => {
+  (id) => {
     activeNodeId.value = id
   }
 )
@@ -26,7 +29,9 @@ watch(
 
 <template>
   <div class="main">
-    <e-tree v-if="show.tree" />
+    <e-tree v-if="show.tree && graph.allTrees" />
+    <q-space />
+    <e-graph v-if="show.graph && graph.allTrees" />
     <div class="bot">
       <e-main-menu />
     </div>
@@ -47,7 +52,8 @@ watch(
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  padding: 5px;
+  padding: 0.2em;
+  padding-right: 0;
 }
 .bot {
   position: absolute;
@@ -67,5 +73,13 @@ div::-webkit-scrollbar-thumb {
 .q-dialog__backdrop {
   background: none !important;
   backdrop-filter: blur(9px);
+}
+.rot {
+  animation: rot 3s linear infinite;
+}
+@keyframes rot {
+  100% {
+    transform: rotate(350deg);
+  }
 }
 </style>

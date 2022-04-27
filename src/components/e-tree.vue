@@ -1,14 +1,13 @@
 <script setup>
-import { ref, reactive, watch, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { show } from '../stores/show'
 import { activeNodeId, graph } from '../stores/nodes'
 import EWindow from './e-window.vue'
-
-onMounted(() => {
-})
+import ENode from './e-node.vue'
+import ECircle from './e-circle.vue'
 
 const structure = computed(() => {
-  console.log(graph)
+  console.log('graph', graph.value)
   const trees = graph.value.allTrees
   if (!trees)
     return {
@@ -17,22 +16,15 @@ const structure = computed(() => {
       allTrees: undefined,
       otherMu: [],
     }
+  if (graph.value.allTrees.length == 1) expand.val = true
+  else expand.val = false
   const nearMu = trees
-    .filter(
-      (t) => t.tree.length == 2 && t.tree[t.tree.length - 1].node.type
-    )
+    .filter((t) => t.tree.length == 2 && t.tree[t.tree.length - 1].node.type)
     .map((t) => t.tree[t.tree.length - 1].node)
   const startMu = trees[0].tree[0].node
   const uplink = nearMu.find((n) => n.s_id == startMu.s_hub1)
   const otherMu = nearMu.filter((n) => n.s_id != startMu.s_hub1)
-  // console.log(
-  //   this.trees.filter(
-  //     (t) => t.tree.length != 2 || !t.tree[t.tree.length - 1].node.type
-  //   )
-  // )
   const circlePort = (tree) => {
-    // if (tree[1].node.s__ip == '10.220.6.213')
-    //   return 'XGigabitEthernet0/0/77'
     const relNode = tree[1]
     if (!relNode) return null
     if (relNode.node.s_id != relNode.rel.a_id) return relNode.rel.a_port
@@ -42,25 +34,22 @@ const structure = computed(() => {
     tree.circlePort = circlePort(tree.tree)
   })
   const allTrees = trees
-    .filter(
-      (t) => t.tree.length != 2 || !t.tree[t.tree.length - 1].node.type
-    )
+    .filter((t) => t.tree.length != 2 || !t.tree[t.tree.length - 1].node.type)
     .sort((a, b) => {
       const regexp = /[0-9]+$/
       const aa = a.circlePort || '999',
         bb = b.circlePort || '999'
       return Number(aa.match(regexp)) - Number(bb.match(regexp))
     })
-  console.log({ uplink, startMu, allTrees, otherMu })
   return { uplink, startMu, allTrees, otherMu }
 })
-const close = () => { show.tree = !show.tree }
-const expand = ref(false)
+const close = () => {
+  show.tree = !show.tree
+}
+const expand = reactive({ val: false })
 const buttons = computed(() => [
   {
-    icon: show.treeAdd
-      ? 'mdi-card-minus-outline'
-      : 'mdi-card-plus',
+    icon: show.treeAdd ? 'mdi-card-minus-outline' : 'mdi-card-plus',
     tooltip: show.treeAdd
       ? 'Выключить дополнительную панель'
       : 'Включить дополнительную панель',
@@ -94,17 +83,16 @@ const buttons = computed(() => [
     color: 'white',
   },
   {
-    icon: !expand.value ? 'mdi-chevron-down' : 'mdi-chevron-up',
-    tooltip: !expand.value ? 'Развернуть всё' : 'Свернуть всё',
+    icon: !expand.val ? 'mdi-chevron-down' : 'mdi-chevron-up',
+    tooltip: !expand.val ? 'Развернуть всё' : 'Свернуть всё',
     dark: true,
     disabled: false,
     click: () => {
-      expand.value = !expand.value
+      expand.val = !expand.val
     },
     color: 'white',
   },
 ])
-
 </script>
 
 <template>
@@ -115,9 +103,30 @@ const buttons = computed(() => [
     :buttons="buttons"
     color="bg-blue-9"
   >
-    <template v-slot:content>{{ structure }}</template>
+    <template v-if="structure.startMu" v-slot:content>
+      <template v-if="structure.uplink">
+        <div class="text-subtitle2">UpLink</div>
+        <div style="margin-right: 1em; margin-left: 0.6em">
+          <e-node :node="structure.uplink" :address="true" />
+        </div>
+      </template>
+      <div class="text-subtitle2">Root</div>
+      <div style="margin-right: 1em; margin-left: 0.6em">
+        <e-node :node="structure.startMu" :address="true" />
+      </div>
+      <div class="text-subtitle2">Кольца</div>
+      <e-circle
+        v-for="(tree, i) in structure.allTrees"
+        :tree="tree"
+        :expand="expand"
+        :key="tree.tree[1].node.s_id"
+      />
+    </template>
   </e-window>
 </template>
 
 <style scoped>
+.text-subtitle2 {
+  margin: 0.5em 1em;
+}
 </style>

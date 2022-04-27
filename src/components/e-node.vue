@@ -1,11 +1,18 @@
 <script setup>
-import { computed } from 'vue'
-import { activeNodeId } from '../stores/nodes'
+import { ref, computed, onMounted, watch } from 'vue'
+import { activeNodeId, force, ping } from '../stores/nodes'
 
-const emit = defineEmits(['clickNode', 'clickAddress'])
+const emit = defineEmits(['clickNode', 'clickAddress', 'ref'])
 
-const { node, nodePrev, address } = defineProps(['node', 'nodePrev', 'address'])
-
+const { node, nodePrev, address, disableActive, disablePing, mini } =
+  defineProps([
+    'node',
+    'nodePrev',
+    'address',
+    'disableActive',
+    'disablePing',
+    'mini',
+  ])
 const nodeIcon = () => {
   switch (node.type) {
     case 1:
@@ -16,62 +23,108 @@ const nodeIcon = () => {
       return 'mdi-help-circle-outline'
   }
 }
-
 const nodeIconColor = () => {
-  if (
-    node.type == 1 &&
-    node.s_monitor == 1 &&
-    node.s_state != 'DIE'
-  )
+  if (node.type == 1 && node.s_monitor == 1 && node.s_state != 'DIE')
     return 'green-9'
   if (node.s_state == 'NEW') return 'blue-6'
   if (node.s_monitor == 1) return 'grey-6'
-  return node.s_state == 'DIE'
-    ? 'red-9'
-    : 'green-9'
+  return node.s_state == 'DIE' ? 'red-9' : 'green-9'
 }
 
-const nodeAddress = computed(
-  () => {
-    const korp = node.ad_korp ? `/${node.ad_korp}` : ''
-    return { addr: `${node.ad_street} ${node.ad_home}` + korp, city: node.city }
+const nodeAddress = computed(() => {
+  const korp = node.ad_korp ? `/${node.ad_korp}` : ''
+  return {
+    addr: `${node.ad_street} ${node.ad_home}` + korp,
+    city: node.city,
   }
-) 
+})
+const nodeClass = computed(() => {
+  return node.s_id == activeNodeId.value && !disableActive
+    ? 'node my-active'
+    : 'node'
+})
+
+const nodeRef = ref(null)
+onMounted(() => {
+  emit('ref', nodeRef)
+})
 </script>
 
 <template>
-  <div v-if="address" class="address">
-    <q-icon name="home" />
-    <div style="margin-left: 5px; font-weight: bold">{{ nodeAddress.addr }}</div>
-    <q-space />
-    <div class="text-grey-8">{{ nodeAddress.city }}</div>
-  </div>
-  <q-item
-    clickable
-    v-ripple
-    dense
-    :active="node.s_id == activeNodeId"
-    active-class="my-active"
-    @click="emit('clickNode', node)"
-  >
-    <div class="node">
-      <q-icon size="1.5em" :name="nodeIcon()" class="n-icon" :color="nodeIconColor()"></q-icon>
-      <div class="n-content">
-        <div class="n-locate">
-          {{ node.s_locate.substring(0, 5) }} {{ node.s_locate.length > 5 ? '...' : '' }}
-          <q-tooltip
-            v-if="node.s_locate.length > 5"
-            anchor="top middle"
-            self="bottom middle"
-            :offset="[0, 10]"
-          >{{ node.s_locate }}</q-tooltip>
-        </div>
-        <div class="n-model">{{ node.m_model }}</div>
-        <div class="n-ip">{{ node.s__ip }}</div>
-        <!-- <div :class="`n-ip bg-${nodeIconColor()} text-white`">{{ node.s__ip }}</div> -->
+  <template v-if="node">
+    <div v-if="address" class="address">
+      <q-icon name="home" />
+      <div style="margin-left: 5px; font-weight: bold">
+        {{ nodeAddress.addr }}
+      </div>
+      <q-space />
+      <div class="text-grey-8">{{ nodeAddress.city }}</div>
+    </div>
+    <div
+      ref="nodeRef"
+      :class="nodeClass"
+      @click="emit('clickNode', node)"
+      @click.ctrl="force = true"
+    >
+      <q-icon
+        v-if="!mini"
+        size="1.5em"
+        :name="nodeIcon()"
+        class="n-icon"
+        :color="nodeIconColor()"
+      ></q-icon>
+      <div class="n-locate bg-grey-8 text-white">
+        {{ node.s_locate }}
+        <q-tooltip
+          v-if="node.s_locate.length > 5"
+          anchor="top middle"
+          self="bottom middle"
+          :offset="[0, 10]"
+          >{{ node.s_locate }}</q-tooltip
+        >
+      </div>
+      <div class="n-model">{{ node.m_model }}</div>
+      <div v-if="!mini" :class="`n-ip bg-${nodeIconColor()} text-white`">
+        <q-space />
+        {{ node.s__ip }}
+        <q-space />
+        <q-btn
+          v-if="!disablePing"
+          @click.prevent.stop="ping(node)"
+          round
+          flat
+          size="0.8em"
+          :class="node.ping ? 'rot' : ''"
+        >
+          <q-icon name="mdi-swap-horizontal" />
+        </q-btn>
+      </div>
+      <!-- <div :class="`n-ip bg-${nodeIconColor()} text-white`">{{ node.s__ip }}</div> -->
+    </div>
+    <div v-if="mini" class="mini">
+      <q-icon
+        size="1.5em"
+        :name="nodeIcon()"
+        class="n-icon"
+        :color="nodeIconColor()"
+      ></q-icon>
+      <div :class="`n-ip bg-${nodeIconColor()} text-white`" style="width: 100%">
+        <q-space />
+        {{ node.s__ip }}
+        <q-space />
+        <q-btn
+          v-if="!disablePing"
+          @click.prevent.stop="ping(node)"
+          round
+          flat
+          size="0.8em"
+          :class="node.ping ? 'rot' : ''"
+        >
+          <q-icon name="mdi-swap-horizontal" />
+        </q-btn>
       </div>
     </div>
-  </q-item>
+  </template>
 </template>
 
 <style lang="sass" scoped>
@@ -80,13 +133,22 @@ const nodeAddress = computed(
   display: flex
   flex-direction: row
   align-items: center
+  width: 100%
+  cursor: pointer
+  padding: 0.5em
 
   & > div
     padding: 0 5px
     text-align: center
 
-.n-content
+.mini 
   display: flex
+  flex-direction: row
+  align-items: center
+  width: 100%
+  cursor: pointer
+  padding: 0em 0.5em
+  margin-bottom: 0.2em
 
 .address
   display: flex
@@ -96,8 +158,8 @@ const nodeAddress = computed(
   border-bottom: solid thin $blue-9
   /* margin: 5px 5px 0 5px */
   cursor: pointer
-  margin: 0 1em
-  padding: 5px
+  margin: 0 .5em
+  /* padding: 5px */
   padding-bottom: 0px
 /* .n-content > div:not(:last-child)::after */
 /*   content: '' */
@@ -126,17 +188,30 @@ const nodeAddress = computed(
 
 .n-locate
   position: relative
-  width: 80px
-  border-color: $grey-8
+  border-radius: 0.3em
+  width: 5em
+  overflow: hidden
+  text-overflow: ellipsis
+  white-space: nowrap
+  padding: 0 0.5em
 
 .n-model
   position: relative
-  width: 200px
+  /* max-width: 15em */
+  flex-grow: 1
+  overflow: hidden
+  text-overflow: ellipsis
+  white-space: nowrap
   border-color: $grey-4
 
 .n-ip
-  position: relative
-  width: 8em
+  display: flex
+  flex-direction: row
+  border-radius: 0.3em
+  width: 10em
+  height: 1.6em
+  align-items: center
+  overflow: hidden
 
 .border-red-9
   border-color: $red-9
@@ -151,8 +226,7 @@ const nodeAddress = computed(
   border-color: $blue-6
 
 .my-active
-  background: $blue-1
-  color: $blue-10
+  background-color: $blue-1
   /* border-right: solid 0.2em $blue-10 */
   /* padding-left: calc(16px - 0.2em) */
 </style>

@@ -1,9 +1,9 @@
-const Graph = ({ rels, nodes }) => {
-  const worth = { correct: 1, lldp: 1, nipmap: 0.5, ipmap: -1, tr: -2 }
+import { worth } from '../stores/constant'
 
+const Graph = ({ rels, nodes }) => {
   const getGraph = () => {
     const res = {}
-    rels.forEach(rel => {
+    rels.forEach((rel) => {
       const { a_id, b_id } = rel
       if (a_id in nodes && b_id in nodes) {
         a_id in res
@@ -50,7 +50,7 @@ const Graph = ({ rels, nodes }) => {
   // get Mu
   const getMu = () => {
     return Object.values(nodes)
-      .filter(n => n.type == 1)
+      .filter((n) => n.type == 1)
       .reduce((res, n) => {
         res[n.s_id] = n
         return res
@@ -92,17 +92,17 @@ const Graph = ({ rels, nodes }) => {
     return [{ path, visited }]
   }
 
-  const getPathWorth = path => {
+  const getPathWorth = (path) => {
     return path.reduce((res, rn) => {
       return rn.rel ? res + worth[rn.rel.source] : 0
     }, 0)
   }
 
-  const getHorde = firstRn => {
+  const getHorde = (firstRn) => {
     const startPath = [{ node: rootMu }]
     const startVisited = new Set([rootMu.s_id])
     const allPathes = getAllPathes(firstRn, startPath, startVisited)
-    const circleHordes = allPathes.filter(path => path.circle)
+    const circleHordes = allPathes.filter((path) => path.circle)
     if (circleHordes.length > 0)
       return circleHordes.sort(
         (a, b) => getPathWorth(b.path) - getPathWorth(a.path)
@@ -116,7 +116,7 @@ const Graph = ({ rels, nodes }) => {
     if (rn.node.s_id in mu) return
     const next = graph[rn.node.s_id]
     const sub = []
-    next.forEach(nrn => {
+    next.forEach((nrn) => {
       if (!treeNodes.has(nrn.node.s_id)) {
         sub.push(nrn)
         treeNodes.add(nrn.node.s_id)
@@ -126,7 +126,7 @@ const Graph = ({ rels, nodes }) => {
     if (sub[0]) rn.sub = sub
   }
 
-  const getTree = firstRn => {
+  const getTree = (firstRn) => {
     const horde = getHorde(firstRn)
     const treeNodes = horde.visited
     const tree = horde.path
@@ -136,10 +136,10 @@ const Graph = ({ rels, nodes }) => {
     return { tree, treeNodes }
   }
   //statTree
-  const statTree = tree => {
+  const statTree = (tree) => {
     tree.places = {}
     let i = 0
-    tree.treeNodes.forEach(nid => {
+    tree.treeNodes.forEach((nid) => {
       const node = nodes[nid]
       const place = node.ad_id
       if (place in tree.places) {
@@ -152,11 +152,11 @@ const Graph = ({ rels, nodes }) => {
     })
   }
   // statAllTrees
-  const statAllTrees = allTrees => {
-    allTrees.forEach(tree => statTree(tree))
+  const statAllTrees = (allTrees) => {
+    allTrees.forEach((tree) => statTree(tree))
   }
 
-  const getTreeId = treeNodes => {
+  const getTreeId = (treeNodes) => {
     let nTreeId = null
     for (const s_id of treeNodes) {
       if (nodes[s_id].nTreeId) {
@@ -175,7 +175,7 @@ const Graph = ({ rels, nodes }) => {
     let allTreeNodes = new Set()
     const allTrees = []
     const corSource = new Set(['lldp', 'correct'])
-    const gtree = correct => {
+    const gtree = (correct) => {
       for (let startRn of graph[rootMu.s_id]) {
         if (
           !allTreeNodes.has(startRn.node.s_id) &&
@@ -200,7 +200,7 @@ const Graph = ({ rels, nodes }) => {
     graph,
     mu,
     getRootMu,
-    allTrees
+    allTrees,
   })
 }
 
