@@ -1,11 +1,12 @@
 <script setup>
-import { reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { show } from './stores/show'
 import { useRoute } from 'vue-router'
 import { activeNodeId, graph } from './stores/nodes'
 import EMainMenu from './components/e-main-menu.vue'
 import ETree from './components/e-tree.vue'
 import EGraph from './components/e-graph.vue'
+import ECommutator from './components/e-commutator.vue'
 
 const keyDown = (e) => {
   if (e.ctrlKey && e.key == 'm') {
@@ -25,16 +26,33 @@ watch(
     activeNodeId.value = id
   }
 )
+const alertShow = ref(false)
+watch(show.alert, () => {
+  alertShow.value = true
+  setTimeout(() => {
+    alertShow.value = false
+  }, 3000)
+})
+const alertMsg = computed(() => show.alert[show.alert.length - 1])
 </script>
 
 <template>
   <div class="main">
     <e-tree v-if="show.tree && graph.allTrees" />
+    <e-commutator v-if="show.commutator && graph.allTrees" />
     <q-space />
     <e-graph v-if="show.graph && graph.allTrees" />
     <div class="bot">
       <e-main-menu />
     </div>
+    <q-dialog v-model="alertShow" :auto-close="true" seamless position="top">
+      <q-banner class="bg-orange-8 text-white">
+        <template v-slot:avatar>
+          <q-icon name="mdi-alert" />
+        </template>
+        {{ alertMsg }}
+      </q-banner>
+    </q-dialog>
   </div>
 </template>
 

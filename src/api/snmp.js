@@ -1,16 +1,64 @@
 import { ParserLldpPorts } from './parser'
+import { getNodes, graphRels, nodes } from '../stores/nodes'
+import { conf } from '../conf'
 
-const SNMP = store => {
+const getLldpRequest = async (nodesIdSet) => {
+  let result
+  const dev = false
+  if (dev) result = testLLdp
+  else {
+    const _nodes = []
+    for (let nodeId of nodesIdSet) {
+      _nodes.push({ id: nodeId, host: nodes[nodeId].s__ip })
+    }
+    const body = JSON.stringify(_nodes)
+    const data = await fetch(conf.loc + '/getLldp', {
+      method: 'POST',
+      headers: new Headers({
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      }),
+      body,
+    })
+    const res = await data.json()
+    result = res.filter((r) => r.lldp.status == 'fulfilled')
+  }
+  result.forEach((nodeLldp) => {
+    const node = nodes[nodeLldp.id]
+    node.lldp = Object.values(nodeLldp.lldp.value).reduce((prev, value) => {
+      prev[value.portSnmpIndex] = value
+      return prev
+    }, {})
+  })
+  return result
+}
+const updateRels = async (ctx, rels) => {
+  const body = JSON.stringify({
+    rels,
+  })
+  const data = await fetch(ctx.state.loc + '/updateRels', {
+    method: 'POST',
+    headers: new Headers({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body,
+  })
+  const res = await data.json()
+  console.log(res)
+}
+
+const SNMP = () => {
   //
-  const getRelsFromLldp = async lldp => {
-    const findIdByMac = mac => {
-      for (const key in store.state.nodes) {
-        if (store.state.nodes[key].s_mac == mac) return key
+  const getRelsFromLldp = async (lldp) => {
+    const findIdByMac = (mac) => {
+      for (const key in nodes) {
+        if (nodes[key].s_mac == mac) return key
       }
     }
     const normRel = []
     const brockRel = []
-    lldp.forEach(l => {
+    lldp.forEach((l) => {
       const a_id = l.id
       for (const key in l.lldp.value) {
         const mac = l.lldp.value[key].r_mac.toUpperCase()
@@ -19,7 +67,7 @@ const SNMP = store => {
           a_id,
           a_port: key,
           a_portSnmpIndex: l.lldp.value[key].portSnmpIndex,
-          b_port: l.lldp.value[key].r_port
+          b_port: l.lldp.value[key].r_port,
         }
         if (b_id) normRel.push({ ...rel, b_id: Number(b_id) })
         else {
@@ -31,14 +79,15 @@ const SNMP = store => {
     return { normRel, brockRel }
   }
   //
-  const getNewNodes = async rels => {
+  const getNewNodes = async (rels) => {
     const newNodesIdSet = new Set()
     if (Object.keys(rels.brockRel)[0]) {
-      const newNodes = await store.dispatch(
-        'getNodeByMac',
-        Object.keys(rels.brockRel)
+      const newNodes = await getNodes(
+        { s_mac: Object.keys(rels.brockRel) },
+        'graph',
+        true
       )
-      newNodes.forEach(n => {
+      newNodes.forEach((n) => {
         if (n.type != 1) newNodesIdSet.add(n.s_id)
         const mac = n.s_mac
         for (const rel of rels.brockRel[mac]) {
@@ -55,10 +104,10 @@ const SNMP = store => {
     nodesIdSet,
     rels = { normRel: [], brockRel: {} }
   ) => {
-    const lldp = await store.dispatch('getCircleLldp', nodesIdSet)
+    const lldp = await getLldpRequest(nodesIdSet)
     console.log(lldp)
 
-    lldp.forEach(l => {
+    lldp.forEach((l) => {
       l.lldp.value = ParserLldpPorts(l.lldp.value)
     })
     const r = await getRelsFromLldp(lldp)
@@ -67,17 +116,17 @@ const SNMP = store => {
     const newNodesIdSet = await getNewNodes(r)
     const newRels = {
       normRel: [...rels.normRel, ...r.normRel],
-      brockRel: { ...rels.brockRel, ...r.brockRel }
+      brockRel: { ...rels.brockRel, ...r.brockRel },
     }
     if (recursive && newNodesIdSet.size)
       return await getRelsNodesFromLldp(recursive, newNodesIdSet, newRels)
     else return newRels
   }
   //
-  const compareRels = newRel => {
-    newRel.a_type = store.state.nodes[newRel.a_id].type
-    newRel.b_type = store.state.nodes[newRel.b_id].type
-    const oldRel = store.state.relsNodes.rels.find(r => {
+  const compareRels = (newRel) => {
+    newRel.a_type = nodes[newRel.a_id].type
+    newRel.b_type = nodes[newRel.b_id].type
+    const oldRel = graphRels.find((r) => {
       return (
         (newRel.a_id == r.a_id && newRel.b_id == r.b_id) ||
         (newRel.a_id == r.b_id && newRel.b_id == r.a_id)
@@ -106,10 +155,10 @@ const SNMP = store => {
         }
       }
     } else {
-      store.state.relsNodes.rels.push({
+      graphRels.push({
         ...newRel,
         change: true,
-        source: 'lldp'
+        source: 'lldp',
       })
     }
   }
@@ -118,13 +167,13 @@ const SNMP = store => {
     return new Promise(async (resolve, reject) => {
       try {
         const rels = await getRelsNodesFromLldp(recursive, nodesIdSet)
-        rels.normRel.forEach(nr => {
+        rels.normRel.forEach((nr) => {
           compareRels(nr)
         })
-        const relsForUpdate = store.state.relsNodes.rels.filter(r => r.change)
+        const relsForUpdate = graphRels.value.filter((r) => r.change)
         if (relsForUpdate.length > 0) {
-          store.dispatch('updateRels', relsForUpdate)
-          relsForUpdate.forEach(r => (r.change = false))
+          updateRels(relsForUpdate)
+          relsForUpdate.forEach((r) => (r.change = false))
         }
         resolve()
       } catch (error) {

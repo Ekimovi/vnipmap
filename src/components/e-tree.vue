@@ -49,39 +49,39 @@ const close = () => {
 const expand = reactive({ val: false })
 const buttons = computed(() => [
   {
-    icon: show.treeAdd ? 'mdi-card-minus-outline' : 'mdi-card-plus',
-    tooltip: show.treeAdd
+    icon: show.commutator ? 'mdi-card-minus-outline' : 'mdi-card-plus',
+    tooltip: show.commutator
       ? 'Выключить дополнительную панель'
       : 'Включить дополнительную панель',
     dark: true,
     disabled: false,
     click: () => {
-      show.treeAdd = !show.treeAdd
+      show.commutator = !show.commutator
     },
     color: 'white',
   },
-  {
-    icon: 'mdi-share-variant',
-    tooltip: 'Скопировать ссылку на активный объект',
-    dark: true,
-    disabled: false,
-    // click: () => {
-    //   const href = `${window.location.origin + window.location.pathname
-    //     }/?activeObjectId=${this.selectedNode} `
-    //   navigator.clipboard
-    //     .writeText(href)
-    //     .then(() => {
-    //       this.$store.commit('addAlert', {
-    //         type: 'info',
-    //         text: 'Ссылка на текущий объект добавлена в буфер обмена',
-    //       })
-    //     })
-    //     .catch((err) => {
-    //       console.log('Something went wrong', err)
-    //     })
-    // },
-    color: 'white',
-  },
+  // {
+  //   icon: 'mdi-share-variant',
+  //   tooltip: 'Скопировать ссылку на активный объект',
+  //   dark: true,
+  //   disabled: false,
+  //   click: () => {
+  //     const href = `${window.location.origin + window.location.pathname
+  //       }/?activeObjectId=${this.selectedNode} `
+  //     navigator.clipboard
+  //       .writeText(href)
+  //       .then(() => {
+  //         this.$store.commit('addAlert', {
+  //           type: 'info',
+  //           text: 'Ссылка на текущий объект добавлена в буфер обмена',
+  //         })
+  //       })
+  //       .catch((err) => {
+  //         console.log('Something went wrong', err)
+  //       })
+  //   },
+  //   color: 'white',
+  // },
   {
     icon: !expand.val ? 'mdi-chevron-down' : 'mdi-chevron-up',
     tooltip: !expand.val ? 'Развернуть всё' : 'Свернуть всё',

@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from 'vue'
+import { show } from './show'
 import { conf } from '../conf'
 import Graph from '../api/graph'
 // import { useRouter } from 'vue-router'
@@ -65,7 +66,7 @@ const cleanNodes = () => {
 }
 for (const mark in nodes.inUse) watch(() => nodes.inUse[mark], cleanNodes)
 
-const getNodes = async (props, mark) => {
+const getNodes = async (props, mark, add) => {
   const body = JSON.stringify(props)
   const data = await fetch(conf.loc + '/getNodes', {
     method: 'POST',
@@ -76,7 +77,8 @@ const getNodes = async (props, mark) => {
     body,
   })
   const newNodes = await data.json()
-  syncNodes(newNodes, mark)
+  syncNodes(newNodes, mark, add)
+  return newNodes
 }
 
 const getRels = async (id) => {
@@ -93,6 +95,24 @@ const getRels = async (id) => {
   return await res.json()
 }
 
+const getPorts = async (nodeId) => {
+  const body = JSON.stringify({
+    nodeId,
+  })
+  const data = await fetch(conf.loc + '/getPorts', {
+    method: 'POST',
+    headers: new Headers({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body,
+  })
+  const res = await data.json()
+  if (nodeId in nodes) {
+    nodes[nodeId].ports = res
+  }
+}
+
 const getNodesIdsFromRels = (rels) => {
   const nodesIds = new Set()
   rels.forEach((r) => {
@@ -106,9 +126,9 @@ const getGraph = async (id) => {
   force.value = false
   const newRels = await getRels(id)
   graphRels.value = newRels
-  const ids = '(' + [...getNodesIdsFromRels(newRels).add(id)].join(', ') + ')'
+  const s_id = [...getNodesIdsFromRels(newRels).add(id)]
   // graph.value = {}
-  getNodes({ ids }, 'graph')
+  getNodes({ s_id }, 'graph')
 }
 
 const ping = async (node) => {
@@ -130,5 +150,48 @@ const ping = async (node) => {
     nodes[res.id].s_state = res.status ? 'LIFE' : 'DIE'
   }
 }
+const updateNode = ({ s_id, updateData }) => {
+  const node = nodes[s_id]
+  node.startTime = updateData.m_start_time
+  const updatedPorts = []
+  updateData.portList.forEach((port) => {
+    const oldPort = node.ports.find((oldP) => oldP.p_num == port.p_num) || {}
+    updatedPorts.push({ p_link: null, ...oldPort, ...port })
+  })
+  nodes[s_id].ports = updatedPorts
+}
+const getNodeUpdate = async (node) => {
+  const body = JSON.stringify({
+    s_id: node.s_id,
+    host: node.s__ip,
+  })
+  const data = await fetch(conf.loc + '/getNodeUpdate', {
+    method: 'POST',
+    headers: new Headers({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body,
+  })
+  const res = await data.json()
+  if ('error' in res) {
+    show.alert.push(res.error)
+    console.log(res)
+    console.log(show.alert)
+    return
+  }
+  updateNode({ s_id: node.s_id, updateData: res })
+}
 
-export { nodes, activeNodeId, graph, graphRels, getNodes, ping, force, getGraph }
+export {
+  nodes,
+  activeNodeId,
+  graph,
+  graphRels,
+  getNodes,
+  ping,
+  force,
+  getGraph,
+  getPorts,
+  getNodeUpdate,
+}

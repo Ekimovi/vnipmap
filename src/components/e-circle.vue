@@ -3,9 +3,10 @@ import { reactive, computed, watch } from 'vue'
 import { nodes, ping } from '../stores/nodes'
 import ETreeContent from './e-tree-content.vue'
 /* import EEditTree from './e-edit-tree.vue' */
-/* import SNMP from '../api/snmp' */
+import SNMP from '../api/snmp'
 
 const { tree, expand } = defineProps(['tree', 'expand'])
+const snmp = SNMP()
 
 const data = reactive({
   pingClickStatus: false,
@@ -112,7 +113,7 @@ const exploreTree = async () => {
   const filterNodesIdForLldp = () => {
     const filteredNodesIdSet = new Set()
     for (let id of tree.treeNodes) {
-      const node = $store.state.nodes[id]
+      const node = nodes[id]
       if (node.s_monitor == 0 && node.s_state == 'LIFE' && node.type != 1)
         filteredNodesIdSet.add(id)
     }
@@ -176,21 +177,25 @@ const show = () => {
           Пинг коммутаторов кольца
         </q-tooltip>
       </q-btn>
-      <!--<v-tooltip bottom open-delay="2000">
-        <template v-slot:activator="{ on }">
-          <v-btn
-            v-on="on"
-            icon
-            @click.prevent.stop="exploreTree"
-            :class="exploreStatus ? 'rot' : ''"
-            :color="updated ? 'blue darken-4' : ''"
-          >
-            <v-icon>mdi-cog-play</v-icon>
-          </v-btn>
-        </template>
-        Обследование данного кольца
-      </v-tooltip>
-      <v-tooltip v-if="updated && (needIndex || Object.keys(badRels).length > 0)" bottom>
+      <q-btn
+        size="0.7em"
+        flat
+        round
+        @click.prevent.stop="exploreTree"
+        :class="data.exploreStatus ? 'rot' : ''"
+        :color="data.updated ? 'blue-9' : ''"
+      >
+        <q-icon name="mdi-cog-play" />
+        <q-tooltip
+          anchor="top middle"
+          self="bottom middle"
+          :offset="[0, 0]"
+          :delay="1000"
+        >
+          Обследование данного кольца
+        </q-tooltip>
+      </q-btn>
+      <!--<v-tooltip v-if="updated && (needIndex || Object.keys(badRels).length > 0)" bottom>
         <template v-slot:activator="{ on }">
           <v-btn v-on="on" icon @click.prevent.stop="editTree = !editTree">
             <v-icon color="orange darken-3j">mdi-alert-decagram</v-icon>
