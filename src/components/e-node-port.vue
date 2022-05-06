@@ -28,14 +28,14 @@ const changeTime = computed(() => {
     node.startTime + port.change.object.miliseconds
   ).toLocaleString()
 })
-const pastTime = () => {
+const pastTime = computed(() => {
   time.value
   const now = new Date().getTime()
   const change = new Date(
     node.startTime + port.change.object.miliseconds
   ).getTime()
   return msToTime(now - change)
-}
+})
 const numClass = computed(() => {
   if (port.p_admin == 2) return 'bg-red-8 text-white'
   if (port.p_oper == 1) return 'bg-green-8 text-white'
@@ -43,8 +43,8 @@ const numClass = computed(() => {
 function delPortLink() {
   port.p_link = null
 }
-function changePortLink() {
-  port.p_link = lldp.s_id
+const changePortLink = () => {
+  port.p_link = lldp.value.s_id
 }
 function findNodeByMac(mac) {
   for (const key in nodes) {
@@ -84,8 +84,7 @@ function getSpeed(speed) {
       <div
         v-for="untagVlan in untag"
         :key="untagVlan"
-        class="vlan"
-        :class="untagVlan == port.cP_pvid ? 'pvid' : ''"
+        class="vlan bg-green-1 text-green-10"
       >
         {{ untagVlan }}
       </div>
@@ -93,7 +92,7 @@ function getSpeed(speed) {
       <div
         v-for="tagVlan in tag"
         :key="tagVlan"
-        class="vlan bg-blue-1 text-blue-9"
+        class="vlan bg-blue-1 text-blue-10"
       >
         {{ tagVlan }}
       </div>
@@ -101,12 +100,16 @@ function getSpeed(speed) {
     <div v-if="port.m_macs" class="macs">
       <div
         v-if="port.m_macs.length > 0"
-        v-on="on"
         :class="port.m_macs.length > 1 ? 'bg-grey-8 text-white' : ''"
       >
         <div>{{ port.m_macs.length }}</div>
       </div>
-      <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
+      <q-tooltip
+        v-if="port.m_macs.length"
+        anchor="center right"
+        self="center left"
+        :offset="[10, 10]"
+      >
         <div v-for="mac in port.m_macs" :key="mac.mac">
           {{ `${mac.mac} : ${mac.vlan}` }}
         </div>
@@ -133,6 +136,8 @@ function getSpeed(speed) {
         color="orange-8"
         class="change-lldp"
         @click="changePortLink"
+        round
+        size="0.8em"
         ><q-icon name="mdi-arrow-left-bold"
       /></q-btn>
       <q-btn
@@ -140,13 +145,15 @@ function getSpeed(speed) {
         color="red-3"
         class="change-lldp"
         @click="delPortLink"
+        round
+        size="0.8em"
         ><q-icon name="mdi-close"
       /></q-btn>
       <div v-if="lldp && !lldp.s_id">{{ lldp.r_name }}</div>
     </div>
     <div class="pack">
       <div class="p_in">
-        {{ port.p_in }}
+        {{ port.p_in || '' }}
       </div>
       <div :class="port.p_in_error != '0' ? 'p_error' : ''">
         {{ port.p_in_error == '0' ? '' : port.p_in_error }}
@@ -154,13 +161,13 @@ function getSpeed(speed) {
     </div>
     <div class="pack">
       <div class="p_out">
-        {{ port.p_out }}
+        {{ port.p_out || '' }}
       </div>
       <div :class="port.p_out_error != '0' ? 'p_error' : ''">
         {{ port.p_out_error == '0' ? '' : port.p_out_error }}
       </div>
     </div>
-    <div v-if="node.startTime" @mouseover="time = !time" class="p_last">
+    <div v-if="port.change" @mouseenter="time = !time" class="p_last">
       <div>{{ changeTime }}</div>
       <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
         {{ pastTime }}

@@ -35,18 +35,6 @@ const nodeIcon = computed(() => {
       return 'mdi-help-circle-outline'
   }
 })
-const time = computed(() => {
-  if (node.startTime) {
-    const now = new Date()
-    const startTime = new Date(node.startTime)
-    const passTime = msToTime(now - startTime)
-    return {
-      startTime: startTime.toLocaleString(),
-      passTime,
-      now: now.toLocaleString(),
-    }
-  }
-})
 const vlan_abon = computed(() => {
   if (node.ports && node.ports.length > 0) {
     const pvidVlans = node.ports.reduce((pvidVlans, port) => {
@@ -55,7 +43,6 @@ const vlan_abon = computed(() => {
       else pvidVlans[pvid] = 1
       return pvidVlans
     }, {})
-    console.log(pvidVlans)
     return Object.keys(pvidVlans).reduce((a, b) =>
       pvidVlans[a] > pvidVlans[b] ? a : b
     )
@@ -89,12 +76,6 @@ const vlan_all = computed(() => {
   const allVlansSet = new Set(allVlans)
   return [...allVlansSet].sort((a, b) => a - b).join(',')
 })
-const getNodeLldp = () => {
-  this.$store.dispatch('getNodeLldp', this.node)
-}
-const getNodeUpdate = () => {
-  this.$store.dispatch('getNodeUpdate', this.node)
-}
 </script>
 
 <template>
@@ -111,13 +92,6 @@ const getNodeUpdate = () => {
           </li>
         </ul>
       </div>
-    </div>
-    <div v-if="time" class="time bg-green-1 text-green-9">
-      <div class="now bg-green-1 text-green-9">
-        {{ time.now }}
-      </div>
-      <div class="start">{{ time.startTime }}</div>
-      <div class="pass">{{ time.passTime }}</div>
     </div>
   </div>
 </template>

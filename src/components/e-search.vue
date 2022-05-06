@@ -22,12 +22,6 @@ const clickNode = (node) => {
 
 const searchField = ref('')
 const searchResult = computed(() => Object.values(nodes.inUse.search))
-watch(
-  () => nodes.inUse.search,
-  (val) => {
-    console.log('asdfasdf')
-  }
-)
 
 const gNodes = async (text) => {
   /* this.loading = true */
@@ -69,7 +63,7 @@ const dGetNodes = debounce(gNodes, 500)
       <q-space />
     </div>
     <div class="result">
-      <div v-for="node in history" class="node-w bg-white">
+      <div v-for="node in history" class="group bg-white shadow-2">
         <e-node :node="node" :address="true" @click-node="clickNode" />
       </div>
     </div>

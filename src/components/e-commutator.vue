@@ -8,6 +8,7 @@ import EPlaceInfo from './e-place-info.vue'
 import ENodeInfo from './e-node-info.vue'
 import ENodePort from './e-node-port.vue'
 import SNMP from '../api/snmp'
+import { msToTime } from '../api/parser'
 
 const gPorts = () => {
   if (node.value && !node.value.ports) getPorts(activeNodeId.value)
@@ -62,9 +63,39 @@ const buttons = computed(() => [
   },
 ])
 const info = reactive({
-  place: true,
+  place: false,
   comm: true,
   node: true,
+})
+const buttonsCom = computed(() => [
+  {
+    icon: 'mdi-map-marker',
+    tooltip: 'Местоположение',
+    color: info.place ? 'blue-9' : 'grey-8',
+    click: async () => {
+      info.place = !info.place
+    },
+  },
+  {
+    icon: 'mdi-nut',
+    tooltip: 'Сетевые реквизмиты',
+    color: info.node ? 'blue-9' : 'grey-8',
+    click: async () => {
+      info.node = !info.node
+    },
+  },
+])
+const time = computed(() => {
+  if (node.value && node.value.startTime) {
+    const now = new Date()
+    const startTime = new Date(node.value.startTime)
+    const passTime = msToTime(now - startTime)
+    return {
+      startTime: startTime.toLocaleString(),
+      passTime,
+      now: now.toLocaleString(),
+    }
+  }
 })
 </script>
 <template>
@@ -77,19 +108,44 @@ const info = reactive({
   >
     <template v-slot:content>
       <div class="commutator" v-if="node">
-        <div style="width: 35em">
+        <div class="node-div">
           <e-node
             :node="node"
             :address="true"
             :disableActive="true"
             :key="node.s_id"
           />
+          <q-space />
+          <q-btn
+            v-for="btn in buttonsCom"
+            :color="btn.color"
+            @click="btn.click"
+            round
+            flat
+            size="0.8em"
+          >
+            <q-icon :name="btn.icon" />
+            <q-tooltip
+              anchor="bottom middle"
+              self="bottom middle"
+              :offset="[0, 30]"
+              >{{ btn.tooltip }}</q-tooltip
+            >
+          </q-btn>
+          <q-space />
         </div>
         <div v-if="info.place || info.comm || info.node" class="e-info">
           <div class="info-cont">
-            <!-- <e-place-info v-if="info.place" :node="node" :key="node.s_id" /> -->
+            <e-place-info v-if="info.place" :node="node" :key="node.s_id" />
             <!-- <e-commutator-info v-if="info.comm" :node="node" :key="node.s_id" /> -->
             <e-node-info v-if="info.node" :node="node" :key="node.s_id" />
+          </div>
+          <div v-if="time" class="time bg-green-1 text-green-10">
+            <div class="bg-green-8 text-white">
+              {{ time.now }}
+            </div>
+            <div class="start">{{ time.startTime }}</div>
+            <div class="pass">{{ time.passTime }}</div>
           </div>
           <div class="e-ports">
             <div class="e-port bg-grey-8 text-white">
@@ -123,6 +179,7 @@ const info = reactive({
 <style>
 .commutator {
   padding: 0.3em;
+  margin-bottom: 4em;
 }
 .space {
   height: 5em;
@@ -224,10 +281,28 @@ const info = reactive({
 }
 .lldp {
   position: relative;
-  width: 350px;
+  width: 20em;
 }
 .change-lldp {
   position: absolute;
   left: -20px;
+}
+.time {
+  display: flex;
+  /* margin-left: 10px; */
+  margin-bottom: 0.5em;
+  justify-content: space-around;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.time > div {
+  width: 100%;
+  padding: 0.3em;
+  text-align: center;
+}
+.node-div {
+  /* width: 35em; */
+  display: flex;
+  align-items: center;
 }
 </style>

@@ -8,7 +8,13 @@ import ENode from './e-node.vue'
 </script>
 
 <template>
-  <q-btn size="md" round icon="dashboard" color="primary" @click="show.mainMenu = !show.mainMenu" />
+  <q-btn
+    size="md"
+    round
+    icon="dashboard"
+    color="primary"
+    @click="show.mainMenu = !show.mainMenu"
+  />
   <q-dialog
     v-model="show.mainMenu"
     maximized
@@ -92,7 +98,7 @@ import ENode from './e-node.vue'
             :color="show.person ? 'primary' : 'grey-8'"
             @click="show.person = !show.person"
           />
-          <div class="lab">imyekimo</div>
+          <div class="lab">Login</div>
         </div>
       </div>
     </div>

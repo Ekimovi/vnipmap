@@ -1,11 +1,11 @@
 import { ParserLldpPorts } from './parser'
-import { getNodes, graphRels, nodes } from '../stores/nodes'
+import { getNodes, graphRels, nodes, setGraph } from '../stores/nodes'
 import { conf } from '../conf'
+import { lldp } from '../stores/test'
 
 const getLldpRequest = async (nodesIdSet) => {
   let result
-  const dev = false
-  if (dev) result = testLLdp
+  if (conf.dev) result = lldp
   else {
     const _nodes = []
     for (let nodeId of nodesIdSet) {
@@ -30,6 +30,7 @@ const getLldpRequest = async (nodesIdSet) => {
       return prev
     }, {})
   })
+  console.log(result)
   return result
 }
 const updateRels = async (ctx, rels) => {
@@ -45,7 +46,7 @@ const updateRels = async (ctx, rels) => {
     body,
   })
   const res = await data.json()
-  console.log(res)
+  // console.log(res)
 }
 
 const SNMP = () => {
@@ -105,14 +106,14 @@ const SNMP = () => {
     rels = { normRel: [], brockRel: {} }
   ) => {
     const lldp = await getLldpRequest(nodesIdSet)
-    console.log(lldp)
+    // console.log(lldp)
 
     lldp.forEach((l) => {
       l.lldp.value = ParserLldpPorts(l.lldp.value)
     })
     const r = await getRelsFromLldp(lldp)
-    console.log(r)
-    console.log(rels)
+    // console.log(r)
+    // console.log(rels)
     const newNodesIdSet = await getNewNodes(r)
     const newRels = {
       normRel: [...rels.normRel, ...r.normRel],
@@ -126,7 +127,7 @@ const SNMP = () => {
   const compareRels = (newRel) => {
     newRel.a_type = nodes[newRel.a_id].type
     newRel.b_type = nodes[newRel.b_id].type
-    const oldRel = graphRels.find((r) => {
+    const oldRel = graphRels.value.find((r) => {
       return (
         (newRel.a_id == r.a_id && newRel.b_id == r.b_id) ||
         (newRel.a_id == r.b_id && newRel.b_id == r.a_id)
@@ -155,7 +156,7 @@ const SNMP = () => {
         }
       }
     } else {
-      graphRels.push({
+      graphRels.value.push({
         ...newRel,
         change: true,
         source: 'lldp',
@@ -175,6 +176,7 @@ const SNMP = () => {
           updateRels(relsForUpdate)
           relsForUpdate.forEach((r) => (r.change = false))
         }
+        setGraph()
         resolve()
       } catch (error) {
         reject(error)

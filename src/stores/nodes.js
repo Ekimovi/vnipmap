@@ -2,6 +2,7 @@ import { reactive, ref, watch } from 'vue'
 import { show } from './show'
 import { conf } from '../conf'
 import Graph from '../api/graph'
+import { upd } from './test'
 // import { useRouter } from 'vue-router'
 
 // const router = useRouter()
@@ -37,13 +38,15 @@ watch(
 watch(
   () => nodes.inUse.graph,
   () => {
-    graph.value = Graph({
-      rels: graphRels.value,
-      nodes: nodes.inUse.graph,
-    })
+    setGraph()
   }
 )
-
+const setGraph = () => {
+  graph.value = Graph({
+    rels: graphRels.value,
+    nodes: nodes.inUse.graph,
+  })
+}
 const syncNodes = (_nodes, mark, add = false) => {
   const newSet = {}
   _nodes.forEach((n) => {
@@ -153,14 +156,13 @@ const ping = async (node) => {
 const updateNode = ({ s_id, updateData }) => {
   const node = nodes[s_id]
   node.startTime = updateData.m_start_time
-  const updatedPorts = []
   updateData.portList.forEach((port) => {
     const oldPort = node.ports.find((oldP) => oldP.p_num == port.p_num) || {}
-    updatedPorts.push({ p_link: null, ...oldPort, ...port })
+    for (const key in port) oldPort[key] = port[key]
   })
-  nodes[s_id].ports = updatedPorts
 }
 const getNodeUpdate = async (node) => {
+  if (conf.dev) return updateNode({ s_id: node.s_id, updateData: upd })
   const body = JSON.stringify({
     s_id: node.s_id,
     host: node.s__ip,
@@ -176,8 +178,8 @@ const getNodeUpdate = async (node) => {
   const res = await data.json()
   if ('error' in res) {
     show.alert.push(res.error)
-    console.log(res)
-    console.log(show.alert)
+    // console.log(res)
+    // console.log(show.alert)
     return
   }
   updateNode({ s_id: node.s_id, updateData: res })
@@ -194,4 +196,5 @@ export {
   getGraph,
   getPorts,
   getNodeUpdate,
+  setGraph,
 }

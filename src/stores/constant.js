@@ -1,17 +1,14 @@
 const relColor = {
   ipmap: 'red',
-  nipmap: 'grey',
+  nipmap: 'lightgrey',
   correct: 'green',
-  lldp: 'orange'
+  lldp: 'orange',
 }
 const worth = {
   ipmap: -1,
   nipmap: 0.5,
   correct: 1,
-  lldp: 1
+  lldp: 1,
 }
 
-export {
-  relColor,
-  worth
-}
+export { relColor, worth }

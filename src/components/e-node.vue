@@ -51,7 +51,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <template v-if="node">
+  <div v-if="node" class="e-node">
     <div v-if="address" class="address">
       <q-icon name="home" />
       <div style="margin-left: 5px; font-weight: bold">
@@ -72,7 +72,9 @@ onMounted(() => {
         :name="nodeIcon()"
         class="n-icon"
         :color="nodeIconColor()"
-      ></q-icon>
+      >
+        <slot></slot>
+      </q-icon>
       <div class="n-locate bg-grey-8 text-white">
         {{ node.s_locate }}
         <q-tooltip
@@ -124,10 +126,13 @@ onMounted(() => {
         </q-btn>
       </div>
     </div>
-  </template>
+  </div>
 </template>
 
 <style lang="sass" scoped>
+.e-node
+  display: flex
+  flex-direction: column
 
 .node
   display: flex
@@ -141,7 +146,7 @@ onMounted(() => {
     padding: 0 5px
     text-align: center
 
-.mini 
+.mini
   display: flex
   flex-direction: row
   align-items: center
@@ -160,6 +165,7 @@ onMounted(() => {
   cursor: pointer
   margin: 0 .5em
   /* padding: 5px */
+  padding-top: 0.2em
   padding-bottom: 0px
 /* .n-content > div:not(:last-child)::after */
 /*   content: '' */

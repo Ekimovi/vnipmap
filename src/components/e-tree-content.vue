@@ -104,7 +104,29 @@ const drawRels = () => {
         :address="needAddress(i)"
         @ref="getRef"
         @clickNode="clickNode"
-      />
+      >
+        <q-tooltip
+          v-if="relNode.rel"
+          anchor="top middle"
+          self="center right"
+          :offset="[0, 20]"
+        >
+          <div>
+            {{
+              relNode.rel.a_id == relNode.node.s_id
+                ? relNode.rel.b_port
+                : relNode.rel.a_port
+            }}
+          </div>
+          <div>
+            {{
+              relNode.rel.a_id != relNode.node.s_id
+                ? relNode.rel.b_port
+                : relNode.rel.a_port
+            }}
+          </div>
+        </q-tooltip>
+      </e-node>
       <e-tree-content
         v-if="relNode.sub"
         :tree="relNode.sub"
