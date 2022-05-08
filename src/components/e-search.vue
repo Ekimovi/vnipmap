@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, watch, onUnmounted, computed } from 'vue'
-import { nodes, getNodes, activeNodeId } from '../stores/nodes'
+import { nodes, getNodes, activeNodeId, force } from '../stores/nodes'
 import { show } from '../stores/show'
 import { debounce } from 'quasar'
 import translit from '../utils/translit'
@@ -16,6 +16,7 @@ const addNodeToHistory = (node) => {
 }
 const clickNode = (node) => {
   addNodeToHistory(node)
+  force.value = true
   activeNodeId.value = node.s_id
   show.mainMenu = false
 }
@@ -29,14 +30,19 @@ const gNodes = async (text) => {
   const getProp = (v) => {
     const regIp = /\d+\.\d+/
     const regNioss = /\d{5}/
+    const eng = /[A-Za-z]/
     if (regIp.test(v)) return { s__ip: v }
     if (regNioss.test(v)) return { niossname: v }
-    return { s_address: translit(v) }
+    if (eng.test(v)) {
+      searchField.value = translit(v)
+      return false
+    }
+    return { s_address: v }
   }
 
   const prop = getProp(text)
 
-  getNodes(prop, 'search')
+  if (prop) getNodes(prop, 'search')
 
   /* this.items = data */
   /* this.showMenu = false */
@@ -49,10 +55,13 @@ const gNodes = async (text) => {
 
 watch(searchField, (val, oldVal) => {
   val && val != oldVal && val.length > 4 && dGetNodes(val)
-  !val && (searchResult.value = [])
+  if (!val) nodes.inUse.search = {}
 })
 
 const dGetNodes = debounce(gNodes, 500)
+const key = (e) => {
+  if (e.keyCode == 72) searchField.value = ''
+}
 </script>
 
 <template>
@@ -79,6 +88,7 @@ const dGetNodes = debounce(gNodes, 500)
       bg-color="white"
       label="Поиск"
       clearable
+      @keydown.alt="key"
     >
       <template v-slot:prepend>
         <q-icon name="search" />

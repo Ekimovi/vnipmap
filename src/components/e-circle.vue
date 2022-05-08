@@ -1,9 +1,9 @@
 <script setup>
 import { reactive, computed, watch } from 'vue'
-import { nodes, ping } from '../stores/nodes'
+import { nodes, ping, graph } from '../stores/nodes'
 import ETreeContent from './e-tree-content.vue'
-/* import EEditTree from './e-edit-tree.vue' */
 import SNMP from '../api/snmp'
+import { show } from '../stores/show'
 
 const { tree, expand } = defineProps(['tree', 'expand'])
 const snmp = SNMP()
@@ -11,8 +11,6 @@ const snmp = SNMP()
 const data = reactive({
   pingClickStatus: false,
   exploreStatus: false,
-  updated: false,
-  editTree: false,
   showContent: expand.val,
 })
 watch(
@@ -30,7 +28,7 @@ const duNodes = computed(() => {
   return res
 })
 const circles = computed(() => {
-  const res = duNodes.reduce((p, n) => {
+  const res = duNodes.value.reduce((p, n) => {
     if (n.c_id in p) p[n.c_id].count++
     else p[n.c_id] = { c_id: n.c_id, c_type: n.c_type, count: 1 }
     return p
@@ -54,18 +52,18 @@ const realCType = computed(() => {
     return { c_type: 1, ma_id: fNode.s_id, mb_id: fNode.s_id }
   return { c_type: 2, ma_id: fNode.s_id, mb_id: sNode.s_id }
 })
-const needIndex = computed(() => {
-  const r = !!(
-    Object.keys(this.circles).length > 1 ||
-    'null' in this.circles ||
-    this.maxCountCid.c_type != this.realCType.c_type
-  )
-  return r
-})
+// const needIndex = computed(() => {
+//   const r = !!(
+//     Object.keys(circles.value).length > 1 ||
+//     'null' in circles.value ||
+//     this.maxCountCid.c_type != this.realCType.c_type
+//   )
+//   return r
+// })
 const badRels = computed(() => {
   let relsNodes = []
-  duNodes.forEach((node) => {
-    relsNodes.push(...$store.state.graph.graph[node.s_id])
+  duNodes.value.forEach((node) => {
+    relsNodes.push(...graph.value.graph[node.s_id])
   })
   const badRels = relsNodes.reduce((p, rn) => {
     if (!(rn.rel.source == 'correct' || rn.rel.source == 'lldp'))
@@ -119,10 +117,18 @@ const exploreTree = async () => {
     }
     return filteredNodesIdSet
   }
-  await snmp.getLldp(filterNodesIdForLldp(tree.treeNodes))
+  const beforeUpdateGraph = () => {
+    treeRels.value.forEach((rel) => {
+      rel.updated = true
+    })
+  }
+  await snmp.getLldp(
+    filterNodesIdForLldp(tree.treeNodes),
+    true,
+    beforeUpdateGraph
+  )
   /* this.$store.commit('setGraph', this.$store.state.relsNodes) */
   data.exploreStatus = false
-  data.updated = true
 }
 const pingTree = () => {
   data.pingClickStatus = true
@@ -136,14 +142,32 @@ const pingNode = (node) => {
     ping(node)
   }
 }
-const show = () => {
+const showContent = () => {
   data.showContent = !data.showContent
 }
+const treeRels = computed(() => {
+  return duNodes.value.reduce((treeRels, node) => {
+    graph.value.graph[node.s_id].forEach((rn) => {
+      treeRels.push(rn.rel)
+    })
+    return treeRels
+  }, [])
+})
+const updated = computed(() => {
+  try {
+    treeRels.value.forEach((rel) => {
+      if (!rel.updated) throw ''
+    })
+  } catch (e) {
+    return false
+  }
+  return true
+})
 </script>
 
 <template>
   <div class="circle-main">
-    <div class="circle" @click="show">
+    <div class="circle" @click="showContent">
       <div :class="'c-type ' + cColor"></div>
       <!--<div class="c-label grey darken-3">
         <div class="c-id">{{ cId || '?' }}</div>
@@ -183,7 +207,7 @@ const show = () => {
         round
         @click.prevent.stop="exploreTree"
         :class="data.exploreStatus ? 'rot' : ''"
-        :color="data.updated ? 'blue-9' : ''"
+        :color="updated ? 'blue-9' : ''"
       >
         <q-icon name="mdi-cog-play" />
         <q-tooltip
@@ -195,27 +219,29 @@ const show = () => {
           Обследование данного кольца
         </q-tooltip>
       </q-btn>
-      <!--<v-tooltip v-if="updated && (needIndex || Object.keys(badRels).length > 0)" bottom>
-        <template v-slot:activator="{ on }">
-          <v-btn v-on="on" icon @click.prevent.stop="editTree = !editTree">
-            <v-icon color="orange darken-3j">mdi-alert-decagram</v-icon>
-          </v-btn>
-        </template>
-        Редактирование кольца
-      </v-tooltip>-->
+      <q-btn
+        v-if="updated && Object.keys(badRels).length > 0"
+        size="0.7em"
+        round
+        flat
+        color="orange-9"
+        @click.prevent.stop="
+          () => {
+            show.graph = true
+          }
+        "
+      >
+        <q-icon name="mdi-alert-decagram"></q-icon>
+        <q-tooltip
+          anchor="top middle"
+          self="bottom middle"
+          :offset="[0, 0]"
+          :delay="1000"
+        >
+          Есть неподтвержденные связи
+        </q-tooltip>
+      </q-btn>
     </div>
-    <!--<e-edit-tree
-      v-if="editTree"
-      :tree="tree"
-      :badRels="badRels"
-      :needIndex="needIndex"
-      :circles="circles"
-      :cId="cId"
-      :realCType="realCType"
-      :duNodes="duNodes"
-      @showEditTree="editTree = false"
-    />-->
-
     <div v-if="data.showContent" class="circle-content">
       <e-tree-content :tree="tree.tree" :redraw="data" />
     </div>

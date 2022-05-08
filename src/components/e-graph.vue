@@ -4,11 +4,18 @@ import EWindow from './e-window.vue'
 import * as d3 from 'd3'
 import ENode from './e-node.vue'
 import { show } from '../stores/show'
-import { graph, graphRels, activeNodeId, nodes, force } from '../stores/nodes'
+import {
+  graph,
+  graphRels,
+  activeNodeId,
+  nodes,
+  force,
+  delRels,
+} from '../stores/nodes'
 import { relColor } from '../stores/constant'
 
 const svgdiv = ref(null)
-const allTrees = computed(() => graph.value.allTree)
+// const allTrees = computed(() => graph.value.allTree)
 // const activeObject = computed({
 //   get() {
 //     return activeNodeId.value ? nodes[activeNodeId.value] : undefined
@@ -20,6 +27,7 @@ const allTrees = computed(() => graph.value.allTree)
 const activeObject = computed(() => {
   return activeNodeId.value ? nodes[activeNodeId.value] : undefined
 })
+const label = ref(false)
 const close = () => {
   show.graph = false
 }
@@ -187,6 +195,7 @@ const relss = computed(() => {
             target: b,
             id: e.id,
             s: e.source,
+            rel: e,
           })
       }
     })
@@ -213,7 +222,14 @@ const unLockAll = () => {
     n.fy = null
   }
 }
-const buttons = reactive([
+const buttons = computed(() => [
+  {
+    icon: label.value ? 'mdi-label-off' : 'mdi-label',
+    click: () => (label.value = !label.value),
+    tooltip: label.value ? 'Серыть подписи' : 'Показать подписи',
+    dark: false,
+    color: 'white',
+  },
   {
     icon: 'mdi-lock',
     click: allLock,
@@ -235,6 +251,14 @@ const onResize = () => {
     data.height = svgdiv.value.offsetHeight
   }
 }
+const badRels = computed(() => {
+  const bb = graphRels.value.reduce((bRels, rel) => {
+    if (rel.updated && rel.source != 'correct' && rel.source != 'lldp')
+      bRels[rel.id] = rel
+    return bRels
+  }, {})
+  return bb
+})
 const startD3 = () => {
   onResize()
   d3.selectAll('svg > *').remove()
@@ -271,12 +295,26 @@ const startD3 = () => {
     .enter()
     .append('line')
     .attr('stroke', (d) => {
+      if (d.rel.id in badRels.value) return relColor['ipmap']
       return relColor[d.s]
     })
     .attr('stroke-width', (d) => {
       if (d.s == 'correct') return 2
       else return 2
     })
+  // let linkLabels = g
+  //   .append('g')
+  //   .selectAll('line')
+  //   .data(edges)
+  //   .enter()
+  //   .append('text')
+  //   // .attr({
+  //   //   class: 'link-label',
+  //   //   'text-anchor': 'middle',
+  //   // })
+  //   .text((d) => 'lsdkfjlksjdfl')
+  // console.log(linkLabels)
+
   let gs = g
     .selectAll('.circleText')
     .data(_nodes)
@@ -308,7 +346,7 @@ const startD3 = () => {
       else return 'du'
     })
   gs.on('mouseover', (e, n) => {
-    if (drag) return
+    if (drag || label.value) return
     data.hoverNode = n
     data.hnPosition = {
       left: e.pageX + 20 + 'px',
@@ -316,6 +354,7 @@ const startD3 = () => {
     }
   })
     .on('mousemove', (e, n) => {
+      if (label.value) return
       if (!data.hoverNode) data.hoverNode = n
       data.hnPosition = {
         left: e.offsetX + 20 + 'px',
@@ -359,6 +398,13 @@ const startD3 = () => {
       .attr('y2', function (d) {
         return d.target.y
       })
+    // linkLabels
+    //   .attr('x', function (d) {
+    //     return 10 + d.source.x - (d.source.x - d.target.x) / 2
+    //   })
+    //   .attr('y', function (d) {
+    //     return d.source.y - (d.source.y - d.target.y) / 2
+    //   })
     gs.attr('transform', function (d) {
       return 'translate(' + d.x + ',' + d.y + ')'
     })
@@ -389,6 +435,34 @@ const startD3 = () => {
     }
   }
 }
+const graphNodes = computed(() => nodes.inUse.graph)
+const badRelsBtnPosition = computed(() => {
+  const result = {}
+  for (const rId in badRels.value) {
+    const offset = 9
+    const rel = badRels.value[rId]
+    const xA = nodes[rel.a_id].x,
+      yA = nodes[rel.a_id].y,
+      xB = nodes[rel.b_id].x,
+      yB = nodes[rel.b_id].y
+    result[rId] = {
+      position: 'absolute',
+      top: data.transform
+        ? (yA + (yB - yA) / 2) * data.transform.k -
+          offset +
+          data.transform.y +
+          'px'
+        : yA + (yB - yA) / 2 - offset + 'px',
+      left: data.transform
+        ? (xA + (xB - xA) / 2) * data.transform.k -
+          offset +
+          data.transform.x +
+          'px'
+        : xA + (xB - xA) / 2 - offset + 'px',
+    }
+  }
+  return result
+})
 </script>
 
 <template>
@@ -423,6 +497,47 @@ const startD3 = () => {
       <div ref="svgdiv" class="graph-wrap">
         <svg :width="data.width + 'px'" :height="data.height + 'px'"></svg>
       </div>
+      <template v-if="label">
+        <div
+          v-for="node in graphNodes"
+          class="hover-node"
+          :style="{
+            top: data.transform
+              ? node.y * data.transform.k - 25 + data.transform.y + 'px'
+              : node.y - 25 + 'px',
+            left: data.transform
+              ? node.x * data.transform.k + 25 + data.transform.x + 'px'
+              : node.x + 25 + 'px',
+          }"
+        >
+          <e-node
+            :node="node"
+            :address="true"
+            :disableActive="true"
+            :key="node.s_id"
+            :disablePing="true"
+          /></div
+      ></template>
+      <q-btn
+        v-for="bRel in badRels"
+        :key="bRel.id"
+        round
+        outline
+        class="bg-white"
+        size="6px"
+        color="red-9"
+        :style="badRelsBtnPosition[bRel.id]"
+        icon="mdi-close"
+        @click="delRels([bRel.id])"
+      >
+        <q-tooltip
+          class="bg-red-9"
+          anchor="center right"
+          self="center left"
+          :offset="[10, 10]"
+          >Удалить связь</q-tooltip
+        >
+      </q-btn>
     </template>
   </e-window>
 </template>
@@ -434,6 +549,7 @@ const startD3 = () => {
 } */
 .graph-wrap {
   /* background-color: aqua; */
+  /* position: relative; */
   flex-grow: 1;
   overflow: hidden;
   font-size: 1.5em;

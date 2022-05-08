@@ -29,7 +29,7 @@ const openUrl = () => {
 
 <template>
   <div class="e-cards">
-    <div v-for="(card, i) in cards" :key="i" class="e-card shadow-1">
+    <div v-for="(card, i) in cards" :key="i" class="e-card">
       <div class="tit">
         <q-icon :name="card.icon" />
         <div style="margin-left: 5px">{{ card.title }}</div>

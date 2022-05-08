@@ -5,6 +5,7 @@ import { show } from '../stores/show'
 import EWindow from './e-window.vue'
 import ENode from './e-node.vue'
 import EPlaceInfo from './e-place-info.vue'
+import ECommutatorInfo from './e-commutator-info.vue'
 import ENodeInfo from './e-node-info.vue'
 import ENodePort from './e-node-port.vue'
 import SNMP from '../api/snmp'
@@ -19,7 +20,6 @@ onMounted(() => {
 onUpdated(() => {
   // gPorts()
 })
-watch(() => activeNodeId.value, gPorts)
 const data = {
   name: 'Оборудование',
   icon: 'mdi-card-minus-outline',
@@ -30,6 +30,7 @@ const close = () => {
 const node = computed(() => {
   return nodes[activeNodeId.value]
 })
+watch(() => node.value, gPorts)
 const ports = computed(() => {
   if (node.value) return node.value.ports
 })
@@ -64,7 +65,7 @@ const buttons = computed(() => [
 ])
 const info = reactive({
   place: false,
-  comm: true,
+  comm: false,
   node: true,
 })
 const buttonsCom = computed(() => [
@@ -74,6 +75,14 @@ const buttonsCom = computed(() => [
     color: info.place ? 'blue-9' : 'grey-8',
     click: async () => {
       info.place = !info.place
+    },
+  },
+  {
+    icon: 'mdi-barcode',
+    tooltip: 'Коммутатор',
+    color: info.comm ? 'blue-9' : 'grey-8',
+    click: async () => {
+      info.comm = !info.comm
     },
   },
   {
@@ -134,42 +143,42 @@ const time = computed(() => {
           </q-btn>
           <q-space />
         </div>
-        <div v-if="info.place || info.comm || info.node" class="e-info">
-          <div class="info-cont">
-            <e-place-info v-if="info.place" :node="node" :key="node.s_id" />
-            <!-- <e-commutator-info v-if="info.comm" :node="node" :key="node.s_id" /> -->
-            <e-node-info v-if="info.node" :node="node" :key="node.s_id" />
+        <div class="info-cont">
+          <e-place-info v-if="info.place" :node="node" :key="node.s_id" />
+          <e-commutator-info v-if="info.comm" :node="node" :key="node.s_id" />
+          <e-node-info v-if="info.node" :node="node" :key="node.s_id" />
+        </div>
+        <div v-if="time" class="time bg-green-1 text-green-10">
+          <div class="bg-green-8 text-white">
+            {{ time.now }}
           </div>
-          <div v-if="time" class="time bg-green-1 text-green-10">
-            <div class="bg-green-8 text-white">
-              {{ time.now }}
+          <div class="start">{{ time.startTime }}</div>
+          <div class="pass">{{ time.passTime }}</div>
+        </div>
+        <div class="e-ports">
+          <div class="e-port bg-grey-8 text-white">
+            <div class="p_num">#</div>
+            <div class="p_speed">Gb/s</div>
+            <div class="p_vlan">Vlan</div>
+            <div v-if="node.startTime" class="macs">Mac's</div>
+            <div class="p_desc">Примечание</div>
+            <div v-if="node.lldp" class="lldp">LLDP</div>
+            <div class="pack">
+              <div class="p_in">IN</div>
             </div>
-            <div class="start">{{ time.startTime }}</div>
-            <div class="pass">{{ time.passTime }}</div>
-          </div>
-          <div class="e-ports">
-            <div class="e-port bg-grey-8 text-white">
-              <div class="p_num">#</div>
-              <div class="p_speed">Gb/s</div>
-              <div class="p_vlan">Vlan</div>
-              <div v-if="node.startTime" class="macs">Mac's</div>
-              <div class="p_desc">Примечание</div>
-              <div v-if="node.lldp" class="lldp">LLDP</div>
-              <div class="pack">
-                <div class="p_in">IN</div>
-              </div>
-              <div class="pack">
-                <div class="p_out">OUT</div>
-              </div>
-              <div v-if="node.startTime" class="p_last">Время</div>
+            <div class="pack">
+              <div class="p_out">OUT</div>
             </div>
-            <e-node-port
-              v-for="port in ports"
-              :port="port"
-              :node="node"
-              :key="port.p_num"
-            />
+            <div v-if="node.startTime" class="p_last">Время</div>
           </div>
+          <!-- <template :key="activeNodeId"> -->
+          <e-node-port
+            v-for="port in ports"
+            :port="port"
+            :node="node"
+            :key="port.p_num"
+          />
+          <!-- </template> -->
         </div>
       </div>
     </template>

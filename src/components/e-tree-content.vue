@@ -3,18 +3,14 @@ import { ref, reactive, computed, onMounted, onUpdated, watch } from 'vue'
 import ENode from './e-node.vue'
 import ETreeContent from './e-tree-content.vue'
 import { relColor } from '../stores/constant'
-import { activeNodeId } from '../stores/nodes'
+import { activeNodeId, graphRels } from '../stores/nodes'
+import { upd } from '../stores/test'
 
 const data = reactive({
   showContent: [],
   showUpPorts: {},
 })
-const { tree, addressId, redraw, type, updated } = defineProps([
-  'tree',
-  'addressId',
-  'updated',
-  'redraw',
-])
+const props = defineProps(['tree', 'addressId', 'redraw'])
 
 // watch(
 //   () => redraw.showContent,
@@ -24,16 +20,16 @@ const { tree, addressId, redraw, type, updated } = defineProps([
 // )
 
 const treeSorted = computed(() => {
-  if (addressId)
+  if (props.addressId)
     return [
-      ...tree.filter((rn) => rn.node.ad_id == addressId),
-      ...tree.filter((rn) => rn.node.ad_id != addressId),
+      ...props.tree.filter((rn) => rn.node.ad_id == props.addressId),
+      ...props.tree.filter((rn) => rn.node.ad_id != props.addressId),
     ]
-  return tree
+  return props.tree
 })
 const needAddress = (i) => {
   if (i == 0) {
-    if (treeSorted.value[i].node.ad_id == addressId) return false
+    if (treeSorted.value[i].node.ad_id == props.addressId) return false
     return true
   }
   if (treeSorted.value[i].node.ad_id == treeSorted.value[i - 1].node.ad_id)
@@ -60,11 +56,17 @@ onMounted(() => {
 onUpdated(() => {
   drawRels()
 })
+const getRelColor = (rel) => {
+  return rel.updated && rel.source == 'nipmap' ? 'red' : relColor[rel.source]
+}
 const drawRel = (ctx, ref, i) => {
   const y = ref.offsetTop
   const h = ref.offsetHeight
   const rel = treeSorted.value[i].rel || treeSorted.value[i + 1].rel
-  const rColor = relColor[rel.source]
+  const rColor = getRelColor(rel)
+  // const col = Object.values(relColor)
+  // const rColor = col[Math.floor(Math.random() * col.length)]
+  ctx.beginPath()
   ctx.strokeStyle = rColor
   ctx.lineWidth = 2
   ctx.moveTo(8, y + h / 2 - 1)
@@ -82,6 +84,7 @@ const drawRel = (ctx, ref, i) => {
 }
 const drawRels = () => {
   const ctx = canvas.value.getContext('2d')
+  ctx.clearRect(0, 0, canvasData.width, canvasData.height)
   canvasData.width = container.value.offsetWidth
   canvasData.height = container.value.offsetHeight
   nodeRefs.forEach((ref, i) => {
@@ -91,7 +94,7 @@ const drawRels = () => {
 </script>
 
 <template>
-  <div v-if="tree" ref="container" style="position: relative">
+  <div v-if="props.tree" ref="container" style="position: relative">
     <canvas
       ref="canvas"
       :width="canvasData.width"
@@ -133,7 +136,7 @@ const drawRels = () => {
         :sub="true"
         :address-id="relNode.node.ad_id"
         style="margin-left: 1.2em"
-        :redraw="redraw"
+        :redraw="props.redraw"
       />
     </div>
   </div>

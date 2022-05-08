@@ -1,10 +1,14 @@
 <script setup>
+import { ref } from 'vue'
 import { show } from '../stores/show'
 // import { history } from '../stores/nodes'
 import ESearch from './e-search.vue'
-import ENode from './e-node.vue'
+import ETips from './e-tips.vue'
 
-/* import { nodes, rels } from './stores/nodes' */
+const time = ref(new Date().toLocaleString().split(', '))
+setInterval(() => {
+  time.value = new Date().toLocaleString().split(', ')
+}, 1000)
 </script>
 
 <template>
@@ -25,7 +29,8 @@ import ENode from './e-node.vue'
       <div class="search">
         <e-search />
       </div>
-      <div class="bar">
+      <div class="bar" style="height: 100vh">
+        <e-tips />
         <div class="row items-center">
           <q-btn
             size="0.9em"
@@ -100,6 +105,10 @@ import ENode from './e-node.vue'
           />
           <div class="lab">Login</div>
         </div>
+        <div class="clock shadow-0 text-grey-6">
+          <div style="font-size: 2em">{{ time[1] }}</div>
+          <div>{{ time[0] }}</div>
+        </div>
       </div>
     </div>
   </q-dialog>
@@ -114,8 +123,10 @@ import ENode from './e-node.vue'
 }
 .bar {
   display: flex;
+  position: relative;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   width: 33%;
   font-size: 0.9em;
   max-height: calc(100vh - 5em);
@@ -127,9 +138,9 @@ import ENode from './e-node.vue'
 .lab {
   width: 10em;
   margin-left: 2em;
-  color: grey;
+  /* color: grey; */
   /* text-align: center; */
-  font-weight: bold;
+  /* font-weight: bold; */
 }
 .group {
   display: flex;
@@ -148,5 +159,17 @@ import ENode from './e-node.vue'
   width: 67%;
   display: flex;
   justify-content: space-around;
+}
+.clock {
+  position: absolute !important;
+  /* right: 20px; */
+  bottom: 0px;
+  font-size: 3em;
+  font-weight: bold;
+  height: auto;
+  width: auto;
+  /* top: auto !important;
+  left: auto !important; */
+  text-align: center;
 }
 </style>

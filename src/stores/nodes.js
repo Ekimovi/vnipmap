@@ -95,7 +95,9 @@ const getRels = async (id) => {
     }),
     body,
   })
-  return await res.json()
+  const result = await res.json()
+  console.log('relsss', result)
+  return result
 }
 
 const getPorts = async (nodeId) => {
@@ -184,6 +186,28 @@ const getNodeUpdate = async (node) => {
   }
   updateNode({ s_id: node.s_id, updateData: res })
 }
+const delRels = async (rels) => {
+  const query = { delRel: rels }
+  const body = JSON.stringify({
+    query,
+  })
+  fetch(conf.loc + '/saveCircle', {
+    method: 'POST',
+    headers: new Headers({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body,
+  })
+  const relsSet = new Set(rels)
+  graphRels.value = graphRels.value.filter((r) => !relsSet.has(r.id))
+  setGraph()
+}
+
+watch(
+  () => graphRels.value,
+  (val) => console.log(val)
+)
 
 export {
   nodes,
@@ -197,4 +221,5 @@ export {
   getPorts,
   getNodeUpdate,
   setGraph,
+  delRels,
 }

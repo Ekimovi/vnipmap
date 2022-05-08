@@ -3069,37 +3069,37 @@ const lldp = [
     },
   },
 
-  {
-    id: 58721,
+  // {
+  //   id: 58721,
 
-    host: '10.220.53.215',
+  //   host: '10.220.53.215',
 
-    lldp: {
-      status: 'fulfilled',
+  //   lldp: {
+  //     status: 'fulfilled',
 
-      value: {
-        'XGigabitEthernet1/1/1': {
-          r_mac: '803af450f48e',
+  //     value: {
+  //       'XGigabitEthernet1/1/1': {
+  //         r_mac: '803af450f48e',
 
-          r_port: 'XGigabitEthernet1/1/2',
+  //         r_port: 'XGigabitEthernet1/1/2',
 
-          r_name: 'Rabochih_11_2',
+  //         r_name: 'Rabochih_11_2',
 
-          portSnmpIndex: '17474',
-        },
+  //         portSnmpIndex: '17474',
+  //       },
 
-        'XGigabitEthernet1/1/2': {
-          r_mac: '803af430eb7d',
+  //       'XGigabitEthernet1/1/2': {
+  //         r_mac: '803af430eb7d',
 
-          r_port: 'XGigabitEthernet1/1/1',
+  //         r_port: 'XGigabitEthernet1/1/1',
 
-          r_name: 'Tatisheva_125_2_2',
+  //         r_name: 'Tatisheva_125_2_2',
 
-          portSnmpIndex: '17475',
-        },
-      },
-    },
-  },
+  //         portSnmpIndex: '17475',
+  //       },
+  //     },
+  //   },
+  // },
 
   {
     id: 58720,

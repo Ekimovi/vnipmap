@@ -9,7 +9,7 @@ import EGraph from './components/e-graph.vue'
 import ECommutator from './components/e-commutator.vue'
 
 const keyDown = (e) => {
-  if (e.ctrlKey && e.key == 'm') {
+  if (e.ctrlKey && e.keyCode == 77) {
     show.mainMenu = !show.mainMenu
   }
 }
@@ -37,7 +37,7 @@ const alertMsg = computed(() => show.alert[show.alert.length - 1])
 </script>
 
 <template>
-  <div class="main">
+  <div class="main bg-grey-3">
     <e-tree v-if="show.tree && graph.allTrees" />
     <e-commutator v-if="show.commutator && graph.allTrees" />
     <q-space />
@@ -66,7 +66,6 @@ const alertMsg = computed(() => show.alert[show.alert.length - 1])
 }
 .main {
   display: flex;
-  background-color: lightgray;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -89,7 +88,7 @@ div::-webkit-scrollbar-thumb {
 }
 
 .q-dialog__backdrop {
-  background: none !important;
+  background: rgba(0, 0, 0, 0.1) !important;
   backdrop-filter: blur(9px);
 }
 .rot {

@@ -119,7 +119,7 @@ const buttons = computed(() => [
         v-for="(tree, i) in structure.allTrees"
         :tree="tree"
         :expand="expand"
-        :key="tree.tree[1].node.s_id"
+        :key="tree.tree[1].node.s_id + tree.tree.length"
       />
     </template>
   </e-window>

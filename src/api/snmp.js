@@ -25,19 +25,21 @@ const getLldpRequest = async (nodesIdSet) => {
   }
   result.forEach((nodeLldp) => {
     const node = nodes[nodeLldp.id]
-    node.lldp = Object.values(nodeLldp.lldp.value).reduce((prev, value) => {
-      prev[value.portSnmpIndex] = value
-      return prev
-    }, {})
+    if (node) {
+      node.lldp = Object.values(nodeLldp.lldp.value).reduce((prev, value) => {
+        prev[value.portSnmpIndex] = value
+        return prev
+      }, {})
+    }
   })
-  console.log(result)
+
   return result
 }
-const updateRels = async (ctx, rels) => {
+const updateRels = async (rels) => {
   const body = JSON.stringify({
     rels,
   })
-  const data = await fetch(ctx.state.loc + '/updateRels', {
+  const data = await fetch(conf.loc + '/updateRels', {
     method: 'POST',
     headers: new Headers({
       Accept: 'application/json',
@@ -51,7 +53,7 @@ const updateRels = async (ctx, rels) => {
 
 const SNMP = () => {
   //
-  const getRelsFromLldp = async (lldp) => {
+  const getRelsFromLldp = (lldp) => {
     const findIdByMac = (mac) => {
       for (const key in nodes) {
         if (nodes[key].s_mac == mac) return key
@@ -111,7 +113,7 @@ const SNMP = () => {
     lldp.forEach((l) => {
       l.lldp.value = ParserLldpPorts(l.lldp.value)
     })
-    const r = await getRelsFromLldp(lldp)
+    const r = getRelsFromLldp(lldp)
     // console.log(r)
     // console.log(rels)
     const newNodesIdSet = await getNewNodes(r)
@@ -160,11 +162,16 @@ const SNMP = () => {
         ...newRel,
         change: true,
         source: 'lldp',
+        updated: true,
       })
     }
   }
   //
-  const getLldp = async (nodesIdSet, recursive = true) => {
+  const getLldp = async (
+    nodesIdSet,
+    recursive = true,
+    beforeUpdateGraph = () => {}
+  ) => {
     return new Promise(async (resolve, reject) => {
       try {
         const rels = await getRelsNodesFromLldp(recursive, nodesIdSet)
@@ -176,6 +183,7 @@ const SNMP = () => {
           updateRels(relsForUpdate)
           relsForUpdate.forEach((r) => (r.change = false))
         }
+        beforeUpdateGraph()
         setGraph()
         resolve()
       } catch (error) {
