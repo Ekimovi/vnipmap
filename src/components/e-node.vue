@@ -4,17 +4,16 @@ import { activeNodeId, force, ping } from '../stores/nodes'
 
 const emit = defineEmits(['clickNode', 'clickAddress', 'ref'])
 
-const { node, nodePrev, address, disableActive, disablePing, mini } =
-  defineProps([
-    'node',
-    'nodePrev',
-    'address',
-    'disableActive',
-    'disablePing',
-    'mini',
-  ])
+const props = defineProps([
+  'node',
+  'address',
+  'disableActive',
+  'disablePing',
+  'mini',
+  'select',
+])
 const nodeIcon = () => {
-  switch (node.type) {
+  switch (props.node.type) {
     case 1:
       return 'mdi-hexagon-slice-6'
     case 0:
@@ -24,24 +23,30 @@ const nodeIcon = () => {
   }
 }
 const nodeIconColor = () => {
-  if (node.type == 1 && node.s_monitor == 1 && node.s_state != 'DIE')
+  if (
+    props.node.type == 1 &&
+    props.node.s_monitor == 1 &&
+    props.node.s_state != 'DIE'
+  )
     return 'green-9'
-  if (node.s_state == 'NEW') return 'blue-6'
-  if (node.s_monitor == 1) return 'grey-6'
-  return node.s_state == 'DIE' ? 'red-9' : 'green-9'
+  if (props.node.s_state == 'NEW') return 'blue-6'
+  if (props.node.s_monitor == 1) return 'grey-6'
+  return props.node.s_state == 'DIE' ? 'red-9' : 'green-9'
 }
 
 const nodeAddress = computed(() => {
-  const korp = node.ad_korp ? `/${node.ad_korp}` : ''
+  const korp = props.node.ad_korp ? `/${props.node.ad_korp}` : ''
   return {
-    addr: `${node.ad_street} ${node.ad_home}` + korp,
-    city: node.city,
+    addr: `${props.node.ad_street} ${props.node.ad_home}` + korp,
+    city: props.node.city,
   }
 })
 const nodeClass = computed(() => {
-  return node.s_id == activeNodeId.value && !disableActive
-    ? 'node my-active'
-    : 'node'
+  let cl = 'node'
+  if (props.node.s_id == activeNodeId.value && !props.disableActive)
+    cl += ' my-active'
+  if (props.select) cl += ' selected'
+  return cl
 })
 
 const nodeRef = ref(null)
@@ -51,8 +56,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="node" class="e-node">
-    <div v-if="address" class="address">
+  <div v-if="props.node" class="e-node">
+    <div v-if="props.address" class="address">
       <q-icon name="home" />
       <div style="margin-left: 5px; font-weight: bold">
         {{ nodeAddress.addr }}
@@ -63,11 +68,11 @@ onMounted(() => {
     <div
       ref="nodeRef"
       :class="nodeClass"
-      @click="emit('clickNode', node)"
+      @click="emit('clickNode', props.node)"
       @click.ctrl="force = true"
     >
       <q-icon
-        v-if="!mini"
+        v-if="!props.mini"
         size="1.5em"
         :name="nodeIcon()"
         class="n-icon"
@@ -76,34 +81,34 @@ onMounted(() => {
         <slot></slot>
       </q-icon>
       <div class="n-locate bg-grey-8 text-white">
-        {{ node.s_locate }}
+        {{ props.node.s_locate }}
         <q-tooltip
-          v-if="node.s_locate.length > 5"
+          v-if="props.node.s_locate.length > 5"
           anchor="top middle"
           self="bottom middle"
           :offset="[0, 10]"
-          >{{ node.s_locate }}</q-tooltip
+          >{{ props.node.s_locate }}</q-tooltip
         >
       </div>
-      <div class="n-model">{{ node.m_model }}</div>
-      <div v-if="!mini" :class="`n-ip bg-${nodeIconColor()} text-white`">
+      <div class="n-model">{{ props.node.m_model }}</div>
+      <div v-if="!props.mini" :class="`n-ip bg-${nodeIconColor()} text-white`">
         <q-space />
-        {{ node.s__ip }}
+        {{ props.node.s__ip }}
         <q-space />
         <q-btn
-          v-if="!disablePing"
-          @click.prevent.stop="ping(node)"
+          v-if="!props.disablePing"
+          @click.prevent.stop="ping(props.node)"
           round
           flat
           size="0.8em"
-          :class="node.ping ? 'rot' : ''"
+          :class="props.node.ping ? 'rot' : ''"
         >
           <q-icon name="mdi-swap-horizontal" />
         </q-btn>
       </div>
       <!-- <div :class="`n-ip bg-${nodeIconColor()} text-white`">{{ node.s__ip }}</div> -->
     </div>
-    <div v-if="mini" class="mini">
+    <div v-if="props.mini" class="mini">
       <q-icon
         size="1.5em"
         :name="nodeIcon()"
@@ -112,15 +117,15 @@ onMounted(() => {
       ></q-icon>
       <div :class="`n-ip bg-${nodeIconColor()} text-white`" style="width: 100%">
         <q-space />
-        {{ node.s__ip }}
+        {{ props.node.s__ip }}
         <q-space />
         <q-btn
-          v-if="!disablePing"
-          @click.prevent.stop="ping(node)"
+          v-if="!props.disablePing"
+          @click.prevent.stop="ping(props.node)"
           round
           flat
           size="0.8em"
-          :class="node.ping ? 'rot' : ''"
+          :class="props.node.ping ? 'rot' : ''"
         >
           <q-icon name="mdi-swap-horizontal" />
         </q-btn>
@@ -235,4 +240,7 @@ onMounted(() => {
   background-color: $blue-1
   /* border-right: solid 0.2em $blue-10 */
   /* padding-left: calc(16px - 0.2em) */
+
+.selected
+  background-color: $grey-4
 </style>

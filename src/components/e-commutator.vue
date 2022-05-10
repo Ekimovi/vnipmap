@@ -114,6 +114,7 @@ const time = computed(() => {
     :close="close"
     :buttons="buttons"
     color="bg-blue-9"
+    style="flex-shrink: 0"
   >
     <template v-slot:content>
       <div class="commutator" v-if="node">
@@ -194,13 +195,12 @@ const time = computed(() => {
   height: 5em;
 }
 .e-ports {
-  width: 100%;
+  /* margin-left: 1em; */
 }
 .e-port {
   display: flex;
   margin-top: 1px;
-  border-radius: 0.4em;
-  overflow: hidden;
+  /* overflow: hidden; */
   align-items: unset !important;
   padding: 0 !important;
   user-select: unset !important;
@@ -218,7 +218,6 @@ const time = computed(() => {
   align-items: center;
   text-align: center;
   padding: 5px;
-  border-radius: 0;
   cursor: pointer;
   /* text-overflow: ellipsis; */
   /* overflow: hidden; */
@@ -226,7 +225,9 @@ const time = computed(() => {
   /* white-space: nowrap; */
 }
 .p_num {
-  width: 30px;
+  width: 3em;
+  border-top-left-radius: 0.3em;
+  border-bottom-left-radius: 0.3em;
   position: relative;
 }
 .p_vlan {

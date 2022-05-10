@@ -2,15 +2,21 @@
 import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { show } from './stores/show'
 import { useRoute } from 'vue-router'
-import { activeNodeId, graph } from './stores/nodes'
+import { activeNodeId, graph, searchField } from './stores/nodes'
 import EMainMenu from './components/e-main-menu.vue'
 import ETree from './components/e-tree.vue'
 import EGraph from './components/e-graph.vue'
 import ECommutator from './components/e-commutator.vue'
 
 const keyDown = (e) => {
-  if (e.ctrlKey && e.keyCode == 77) {
+  if (e.altKey && e.keyCode == 77) {
     show.mainMenu = !show.mainMenu
+  } else if (e.keyCode >= 48 && e.keyCode <= 90) {
+    if (!show.mainMenu) searchField.value = ''
+    searchField.value
+      ? (searchField.value += e.key)
+      : (searchField.value = e.key)
+    show.mainMenu = true
   }
 }
 

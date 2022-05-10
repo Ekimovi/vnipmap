@@ -2,7 +2,7 @@ import { reactive, ref, watch } from 'vue'
 import { show } from './show'
 import { conf } from '../conf'
 import Graph from '../api/graph'
-import { upd } from './test'
+import { upd, sfpTest } from './test'
 // import { useRouter } from 'vue-router'
 
 // const router = useRouter()
@@ -21,6 +21,7 @@ const graphRels = ref([])
 const activeNodeId = ref(0)
 const force = ref(false)
 const graph = ref({})
+const searchField = ref('')
 
 watch(
   () => activeNodeId.value,
@@ -155,13 +156,51 @@ const ping = async (node) => {
     nodes[res.id].s_state = res.status ? 'LIFE' : 'DIE'
   }
 }
+
+const pushSfpDataToPorts = (sfpData, node) => {
+  sfpData.forEach((sfp) => {
+    if (!sfp.lengthWave) return
+    const port = node.ports.find((port) => port.p_index == sfp.portIndex)
+    console.log(port)
+    if (!port) return
+    port.sfp = sfp
+  })
+  console.log('nodeSfp', node)
+}
+
+const getSfpData = async (node) => {
+  if (conf.dev) return pushSfpDataToPorts(sfpTest, node)
+  const body = JSON.stringify({
+    s_id: node.s_id,
+    host: node.s__ip,
+  })
+  const data = await fetch(conf.loc + '/getSfpData', {
+    method: 'POST',
+    headers: new Headers({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body,
+  })
+  const res = await data.json()
+  if ('error' in res) {
+    show.alert.push(res.error)
+    // console.log(res)
+    // console.log(show.alert)
+    return
+  }
+  pushSfpDataToPorts(res, node)
+}
+
 const updateNode = ({ s_id, updateData }) => {
+  console.log('snmpNode', updateData)
   const node = nodes[s_id]
   node.startTime = updateData.m_start_time
   updateData.portList.forEach((port) => {
     const oldPort = node.ports.find((oldP) => oldP.p_num == port.p_num) || {}
     for (const key in port) oldPort[key] = port[key]
   })
+  getSfpData(nodes[s_id])
 }
 const getNodeUpdate = async (node) => {
   if (conf.dev) return updateNode({ s_id: node.s_id, updateData: upd })
@@ -222,4 +261,5 @@ export {
   getNodeUpdate,
   setGraph,
   delRels,
+  searchField,
 }

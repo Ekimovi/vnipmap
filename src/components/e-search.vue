@@ -1,14 +1,21 @@
 <script setup>
 import { ref, reactive, watch, onUnmounted, computed } from 'vue'
-import { nodes, getNodes, activeNodeId, force } from '../stores/nodes'
+import {
+  nodes,
+  getNodes,
+  activeNodeId,
+  force,
+  searchField,
+} from '../stores/nodes'
 import { show } from '../stores/show'
 import { debounce } from 'quasar'
 import translit from '../utils/translit'
 import ENode from './e-node.vue'
-import ENodeList from './e-node-list.vue'
+// import ENodeList from './e-node-list.vue'
 
 onUnmounted(() => {})
 
+const selectIndex = ref(0)
 const history = ref(JSON.parse(localStorage.getItem('history')) || [])
 const addNodeToHistory = (node) => {
   history.value = [node, ...history.value.filter((n) => n.s_id != node.s_id)]
@@ -21,7 +28,6 @@ const clickNode = (node) => {
   show.mainMenu = false
 }
 
-const searchField = ref('')
 const searchResult = computed(() => Object.values(nodes.inUse.search))
 
 const gNodes = async (text) => {
@@ -30,7 +36,7 @@ const gNodes = async (text) => {
   const getProp = (v) => {
     const regIp = /\d+\.\d+/
     const regNioss = /\d{5}/
-    const eng = /[A-Za-z]/
+    const eng = /[A-Za-z\[]/
     if (regIp.test(v)) return { s__ip: v }
     if (regNioss.test(v)) return { niossname: v }
     if (eng.test(v)) {
@@ -42,7 +48,10 @@ const gNodes = async (text) => {
 
   const prop = getProp(text)
 
-  if (prop) getNodes(prop, 'search')
+  if (prop) {
+    await getNodes(prop, 'search')
+    selectIndex.value = 0
+  }
 
   /* this.items = data */
   /* this.showMenu = false */
@@ -59,9 +68,56 @@ watch(searchField, (val, oldVal) => {
 })
 
 const dGetNodes = debounce(gNodes, 500)
-const key = (e) => {
-  if (e.keyCode == 72) searchField.value = ''
+
+const changeSelectIndex = (offset) => {
+  if (selectIndex.value + offset > searchResult.value.length - 1) {
+    selectIndex.value = 0
+    return
+  }
+  if (selectIndex.value + offset < 0) {
+    selectIndex.value = searchResult.value.length - 1
+    return
+  }
+  selectIndex.value += offset
 }
+const key = (e) => {
+  e.stopPropagation()
+  if (e.keyCode == 40) changeSelectIndex(1)
+  if (e.keyCode == 38) changeSelectIndex(-1)
+}
+const altKey = (e) => {
+  e.stopPropagation()
+  if (e.keyCode == 77) show.mainMenu = false
+  if (e.keyCode == 72) searchField.value = ''
+  if (e.keyCode == 74) changeSelectIndex(1)
+  if (e.keyCode == 75) changeSelectIndex(-1)
+}
+const setActiveNode = () => {
+  const selectedNode = nodesList.value[selectIndex.value]
+  if (selectedNode) {
+    clickNode(selectedNode)
+  }
+}
+const sortGroup = (group) => {
+  return Object.values(group).sort((aa, bb) => {
+    const a = aa[0],
+      b = bb[0]
+    if (a.ad_street == b.ad_street) return a.ad_home - b.ad_home
+    return a.ad_street > b.ad_street ? -1 : 1
+  })
+}
+const groupedNodes = computed(() => {
+  return sortGroup(
+    searchResult.value.reduce((prev, node) => {
+      const key = node.ad_id
+      key in prev ? prev[key].push(node) : (prev[key] = [node])
+      return prev
+    }, {})
+  )
+})
+const nodesList = computed(() => {
+  return [].concat.apply([], groupedNodes.value)
+})
 </script>
 
 <template>
@@ -88,14 +144,27 @@ const key = (e) => {
       bg-color="white"
       label="Поиск"
       clearable
-      @keydown.alt="key"
+      @keydown.exact="key"
+      @keydown.alt.exact="altKey"
+      @keypress.enter="setActiveNode"
     >
       <template v-slot:prepend>
         <q-icon name="search" />
       </template>
     </q-input>
     <div v-if="searchResult.length > 0" class="result">
-      <e-node-list :nodes="searchResult" @click-node="clickNode" />
+      <div v-for="group in groupedNodes" class="group bg-white shadow-2">
+        <e-node
+          v-for="(node, i) in group"
+          :node="node"
+          :address="i == 0"
+          @click-node="clickNode(node)"
+          :key="node.s_id"
+          :select="
+            nodesList[selectIndex] && node.s_id == nodesList[selectIndex].s_id
+          "
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -134,5 +203,11 @@ const key = (e) => {
 }
 .node-w {
   padding-bottom: 0.3em;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 5px;
+  border-radius: 0.3em;
 }
 </style>

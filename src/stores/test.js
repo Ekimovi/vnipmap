@@ -3069,37 +3069,37 @@ const lldp = [
     },
   },
 
-  // {
-  //   id: 58721,
+  {
+    id: 58721,
 
-  //   host: '10.220.53.215',
+    host: '10.220.53.215',
 
-  //   lldp: {
-  //     status: 'fulfilled',
+    lldp: {
+      status: 'fulfilled',
 
-  //     value: {
-  //       'XGigabitEthernet1/1/1': {
-  //         r_mac: '803af450f48e',
+      value: {
+        'XGigabitEthernet1/1/1': {
+          r_mac: '803af450f48e',
 
-  //         r_port: 'XGigabitEthernet1/1/2',
+          r_port: 'XGigabitEthernet1/1/2',
 
-  //         r_name: 'Rabochih_11_2',
+          r_name: 'Rabochih_11_2',
 
-  //         portSnmpIndex: '17474',
-  //       },
+          portSnmpIndex: '17474',
+        },
 
-  //       'XGigabitEthernet1/1/2': {
-  //         r_mac: '803af430eb7d',
+        'XGigabitEthernet1/1/2': {
+          r_mac: '803af430eb7d',
 
-  //         r_port: 'XGigabitEthernet1/1/1',
+          r_port: 'XGigabitEthernet1/1/1',
 
-  //         r_name: 'Tatisheva_125_2_2',
+          r_name: 'Tatisheva_125_2_2',
 
-  //         portSnmpIndex: '17475',
-  //       },
-  //     },
-  //   },
-  // },
+          portSnmpIndex: '17475',
+        },
+      },
+    },
+  },
 
   {
     id: 58720,
@@ -3110,22 +3110,22 @@ const lldp = [
       status: 'fulfilled',
 
       value: {
-        'XGigabitEthernet1/1/1': {
+        'xgigabitethernet1/1/1': {
           r_mac: '803af430d553',
 
-          r_port: 'XGigabitEthernet1/1/2',
+          r_port: 'xgigabitethernet1/1/2',
 
-          r_name: 'Rabochih_9_1',
+          r_name: 'rabochih_9_1',
 
           portSnmpIndex: '17474',
         },
 
-        'XGigabitEthernet1/1/2': {
+        'xgigabitethernet1/1/2': {
           r_mac: '803af430f3d7',
 
-          r_port: 'XGigabitEthernet1/1/1',
+          r_port: 'xgigabitethernet1/1/1',
 
-          r_name: 'Tatisheva_125_2_5',
+          r_name: 'tatisheva_125_2_5',
 
           portSnmpIndex: '17475',
         },
@@ -3142,22 +3142,22 @@ const lldp = [
       status: 'fulfilled',
 
       value: {
-        'XGigabitEthernet1/1/1': {
+        'xgigabitethernet1/1/1': {
           r_mac: '803af430d3d1',
 
-          r_port: 'XGigabitEthernet1/1/2',
+          r_port: 'xgigabitethernet1/1/2',
 
-          r_name: 'Rabochih_9_3',
+          r_name: 'rabochih_9_3',
 
           portSnmpIndex: '17474',
         },
 
-        'XGigabitEthernet1/1/2': {
+        'xgigabitethernet1/1/2': {
           r_mac: '803af450f48e',
 
-          r_port: 'XGigabitEthernet1/1/1',
+          r_port: 'xgigabitethernet1/1/1',
 
-          r_name: 'Rabochih_11_2',
+          r_name: 'rabochih_11_2',
 
           portSnmpIndex: '17475',
         },
@@ -3198,4 +3198,63 @@ const lldp = [
   },
 ]
 
-export { upd, lldp }
+const sfpTest = [
+  {
+    portIndex: 17474,
+    vendor: 'FiberTrade',
+    date: '150929',
+    RX: 0,
+    TX: 0,
+    transceiverType: 'BASE-BX10_SFP',
+    partNum: 'FT-SFP-WDM-1,25-',
+    lengthWave: 1310,
+    distantion: 10000,
+    temperature: 0,
+    voltage: 0,
+    biasCurrent: 0,
+  },
+  {
+    portIndex: 17475,
+    vendor: 'FiberHome',
+    date: '200703',
+    RX: -40,
+    TX: -1.24,
+    transceiverType: '10G Base-LR_SFP',
+    partNum: '5044002-004',
+    lengthWave: 1310,
+    distantion: 10000,
+    temperature: 24,
+    voltage: 3.26,
+    biasCurrent: 39.5,
+  },
+  {
+    portIndex: 17538,
+    vendor: 'FiberHome',
+    date: '200723',
+    RX: -40,
+    TX: -1.05,
+    transceiverType: '10G Base-LR_SFP',
+    partNum: '5044002-008-D',
+    lengthWave: 1270,
+    distantion: 20000,
+    temperature: 33,
+    voltage: 3.17,
+    biasCurrent: 40.2,
+  },
+  {
+    portIndex: 17539,
+    vendor: 'FiberHome',
+    date: '201020',
+    RX: -40,
+    TX: -0.49,
+    transceiverType: '10G Base-LR_SFP',
+    partNum: '5044002-009',
+    lengthWave: 1330,
+    distantion: 20000,
+    temperature: 38,
+    voltage: 3.19,
+    biasCurrent: 30.89,
+  },
+]
+
+export { upd, lldp, sfpTest }

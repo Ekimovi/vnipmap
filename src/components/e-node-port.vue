@@ -71,12 +71,29 @@ function getSpeed(speed) {
     </div>
     <div
       class="p_speed"
+      style="position: relative"
       :class="
         getSpeed(props.port.p_speed) == 10 && props.port.p_oper == 1
           ? 'bg-green-8 text-white'
           : ''
       "
     >
+      <div v-if="props.port.sfp" class="sfp">
+        <q-btn outline size="0.6em" round color="green-9" class="bg-white">
+          <q-icon size="2em" name="mdi-equalizer" />
+
+          <q-tooltip
+            anchor="center right"
+            self="center left"
+            :offset="[10, 10]"
+            class="bg-blue-10"
+          >
+            <div v-for="(param, key) in props.port.sfp">
+              {{ key + ':   ' + param }}
+            </div>
+          </q-tooltip>
+        </q-btn>
+      </div>
       {{ getSpeed(props.port.p_speed) }}
     </div>
     <div class="p_vlan" style="max-width: 300px">
@@ -177,4 +194,10 @@ function getSpeed(speed) {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.sfp {
+  position: absolute;
+  /* top: 0; */
+  left: -0.9em;
+}
+</style>
